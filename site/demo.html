@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Inmoconecta CRM · Demo</title>
+<meta name="description" content="Demo funcional del CRM propuesto para Inmoconecta Huancayo: leads de Meta y TikTok, urgentes, pipeline, stock de propiedades, captación y trazabilidad.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="assets/base.css">
+<link rel="stylesheet" href="assets/demo.css">
+</head>
+<body>
+<div class="app">
+  <aside class="side" id="side" aria-label="Menú principal">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">i</div>
+      <div>
+        <div class="brand-name">Inmoconecta</div>
+        <div class="brand-sub">CRM · Huancayo</div>
+      </div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="side-foot">
+      <div class="me">
+        <span class="avatar">AL</span>
+        <div><b>Alberto</b><span>Bróker · Administrador</span></div>
+      </div>
+      <a class="side-link" href="index.html">← Volver a la propuesta</a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="demo-banner" role="note">
+      <span><b>Demo con datos de ejemplo.</b> Nombres, teléfonos y cifras son ficticios. Lo que cambies se guarda solo en este navegador.</span>
+      <button type="button" id="reset-demo">Reiniciar demo</button>
+    </div>
+    <header class="top">
+      <button class="btn ghost sm menu-btn" id="menu-btn" type="button" aria-label="Abrir menú"></button>
+      <div class="top-titles">
+        <h1 id="page-title">Panel</h1>
+        <div class="sub" id="page-sub"></div>
+      </div>
+      <div class="top-actions">
+        <div class="search">
+          <span id="search-ic"></span>
+          <input id="global-search" type="search" placeholder="Buscar lead, teléfono, código…" autocomplete="off" aria-label="Buscar">
+          <div class="search-results" id="search-results" hidden></div>
+        </div>
+        <label class="live-toggle" id="live-toggle" title="Cuando está activo, entra un lead simulado de Meta o TikTok cada 45 segundos">
+          <span class="live-dot"></span><span class="lbl">En vivo</span>
+        </label>
+        <button class="btn primary sm" id="sim-lead" type="button">Simular lead</button>
+      </div>
+    </header>
+    <main class="view" id="view" tabindex="-1"></main>
+  </div>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="dr-title"></aside>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="assets/demo-data.js"></script>
+<script src="assets/demo-app.js"></script>
+</body>
+</html>
