@@ -142,6 +142,38 @@
   footer { padding-block: 28px 40px; color: var(--muted); font-size: 13px; }
   footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 
+
+  .logo .kallari { display: inline-flex; background: #f5efe2; border-radius: 10px; padding: 0 4px; line-height: 0; }
+  .logo .kallari img { height: 36px; width: auto; }
+  .logo-for { font-size: 16px; }
+  .logo-for small { font-family: var(--font-body); font-weight: 500; color: var(--muted); font-size: 13px; }
+  .invest { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .inv-card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .inv-card h3 { font-size: 22px; }
+  .inv-card p { color: var(--ink-2); font-size: 14.5px; }
+  .inv-card ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 14.5px; color: var(--ink-2); }
+  .inv-card li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 6px; }
+  .inv-card li::before { content: "✓"; color: var(--accent); font-weight: 700; }
+  .split { display: grid; grid-template-columns: 3fr 7fr; gap: 4px; }
+  .split div { border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .split .s30 { background: var(--gold-soft); }
+  .split .s70 { background: var(--accent-soft); }
+  .split b { font-family: var(--font-display); font-size: 26px; line-height: 1; }
+  .split .s30 b { color: var(--gold); }
+  .split .s70 b { color: var(--accent); }
+  .split span { font-size: 12.5px; color: var(--ink-2); }
+  .contact { margin-top: 20px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); }
+  .contact img { height: 34px; width: auto; border-radius: 8px; }
+  .contact b { display: block; font-size: 15px; }
+  .contact span { font-size: 13px; color: var(--muted); }
+  .contact .phone { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .contact #phone { font-family: var(--font-mono); font-size: 16px; color: var(--ink); user-select: all; }
+  @media (max-width: 760px) {
+    .invest { grid-template-columns: minmax(0, 1fr); }
+    .split { grid-template-columns: 1fr 1fr; }
+    .contact .phone { margin-left: 0; }
+    .logo-for { display: none; }
+  }
   @media (max-width: 960px) {
     .hero .wrap { grid-template-columns: minmax(0, 1fr); gap: 36px; }
     .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 20px; }
@@ -170,7 +202,7 @@
 
 <header class="bar">
   <div class="wrap">
-    <div class="logo"><span class="mark">i</span><span>Inmoconecta CRM <small>· propuesta</small></span></div>
+    <div class="logo"><span class="kallari"><img src="assets/kallari-logo.png" width="123" height="43" alt="Kallari"></span><span class="logo-for">Propuesta CRM <small>para Inmoconecta</small></span></div>
     <a class="btn sm" href="demo.html">Abrir la demo</a>
   </div>
 </header>
@@ -178,7 +210,7 @@
 <section class="hero">
   <div class="wrap">
     <div>
-      <span class="for"><span class="pill accent">Propuesta</span>Para Alberto · Inmoconecta Huancayo · septiembre 2026</span>
+      <span class="for"><span class="pill accent">Propuesta</span>Para Alberto · Inmoconecta Huancayo · por Kallari</span>
       <h1>Que ningún lead de Meta o TikTok <em>se enfríe esperando.</em></h1>
       <p class="lead">Un CRM hecho para la forma en que vende Inmoconecta. Cada formulario de sus campañas entra solo, se asigna al asesor en turno, recibe un WhatsApp en menos de un minuto y queda registrado hasta la firma. Además, cada propietario sabe cómo va la venta de su inmueble, sin tener que llamar a preguntar.</p>
       <div class="ctas">
@@ -328,7 +360,7 @@
     <div class="plan">
       <div class="wk"><span class="n">Semana 1</span><h3>Conexión</h3><p>Reunión con Alberto y los asesores. Conectamos Meta Lead Ads, TikTok Lead Gen y el WhatsApp de la agencia.</p></div>
       <div class="wk"><span class="n">Semana 2</span><h3>Carga de datos</h3><p>Stock de propiedades, propietarios y leads actuales desde Excel. Reglas de asignación y turnos.</p></div>
-      <div class="wk"><span class="n">Semana 3</span><h3>Automatizaciones</h3><p>Plantillas de WhatsApp, alertas, recordatorios y reportes. Capacitación del equipo y conexión con la web.</p></div>
+      <div class="wk"><span class="n">Semana 3</span><h3>Automatizaciones</h3><p>Plantillas de WhatsApp, alertas, recordatorios y reportes. Capacitación del equipo por videollamada y conexión con la web.</p></div>
       <div class="wk"><span class="n">Semana 4</span><h3>Salida en vivo</h3><p>Acompañamiento diario, ajuste de alertas y primer reporte automático a los propietarios.</p></div>
     </div>
     <p class="after">Después: una reunión mensual con Alberto para revisar resultados por campaña y por asesor, y decidir mejoras.</p>
@@ -346,8 +378,39 @@
       <div><b>Desde el celular</b><span>Se instala como app en Android y iPhone. Los asesores atienden desde la calle.</span></div>
       <div><b>Roles y permisos</b><span>Cada asesor ve sus leads; Alberto ve todo el negocio.</span></div>
       <div><b>Los datos son suyos</b><span>Exportables en cualquier momento. Copias de seguridad diarias.</span></div>
-      <div><b>Capacitación</b><span>Sesiones para el equipo y guías cortas en video.</span></div>
+      <div><b>Capacitación por videollamada</b><span>Sesiones en vivo para Alberto y los asesores, más guías cortas en video para consultar después.</span></div>
       <div><b>Soporte y mejoras</b><span>Soporte por WhatsApp en horario laboral y nuevas funciones según lo que pida el equipo.</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="inversion" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">Inversión</div>
+      <h2 class="sec">Un monto fijo, sin cobro por usuario</h2>
+      <p class="intro">Inmoconecta puede sumar asesores cuando crezca sin que cambie el precio. Los montos exactos van en la cotización.</p>
+    </div>
+    <div class="invest">
+      <div class="inv-card">
+        <div class="eyebrow">Implementación · pago único</div>
+        <h3>Se paga en dos partes</h3>
+        <div class="split" role="img" aria-label="30% al iniciar y 70% al entregar">
+          <div class="s30"><b>30%</b><span>Para empezar a trabajar</span></div>
+          <div class="s70"><b>70%</b><span>Al entregar el CRM funcionando</span></div>
+        </div>
+        <p>Incluye la configuración, la conexión con Meta, TikTok y WhatsApp, la carga del stock y de los propietarios, las automatizaciones y la capacitación por videollamada.</p>
+      </div>
+      <div class="inv-card">
+        <div class="eyebrow">Mensualidad del CRM</div>
+        <h3>Monto fijo cada mes</h3>
+        <ul>
+          <li>Servidor, dominio del CRM y copias de seguridad diarias</li>
+          <li>Soporte por WhatsApp y ajustes a las automatizaciones</li>
+          <li>Mejoras y nuevas funciones según lo que pida el equipo</li>
+          <li>Sin cobro adicional por cada asesor que se sume</li>
+        </ul>
+      </div>
     </div>
   </div>
 </section>
@@ -357,12 +420,18 @@
     <div class="next">
       <div>
         <div class="eyebrow">Siguiente paso</div>
-        <h2>Una sesión de 30 minutos con sus propios leads</h2>
-        <p>Conectamos una campaña de prueba de Meta o TikTok y Alberto ve cómo sus leads reales entran al CRM, se asignan y aparecen en Urgentes. Mientras tanto, la demo está abierta para que el equipo la recorra.</p>
+        <h2>Conversemos 30 minutos por videollamada</h2>
+        <p>Recorremos la demo juntos, revisamos cómo trabaja hoy el equipo de Inmoconecta y ajustamos la propuesta a sus campañas. Mientras tanto, la demo está abierta para que el equipo la pruebe.</p>
+        <div class="contact">
+          <img src="assets/kallari-logo.png" width="123" height="43" alt="Kallari">
+          <div><b>José Cacya</b><span>Kallari</span></div>
+          <div class="phone"><span id="phone">+51 941 571 821</span><button type="button" class="btn sm" id="copy-phone">Copiar número</button></div>
+        </div>
       </div>
       <div class="ctas">
-        <a class="btn primary" href="demo.html">Abrir la demo funcional</a>
-        <a class="btn" href="demo.html#urgentes">Ir directo a Urgentes</a>
+        <a class="btn primary" href="https://wa.me/51941571821?text=Hola%20Jos%C3%A9%2C%20vi%20la%20propuesta%20del%20CRM%20para%20Inmoconecta%20y%20quiero%20agendar%20una%20reuni%C3%B3n." target="_blank" rel="noopener">Escribir por WhatsApp</a>
+        <a class="btn" href="demo.html">Abrir la demo funcional</a>
+        <a class="btn ghost" href="demo.html#urgentes">Ir directo a Urgentes</a>
       </div>
     </div>
   </div>
@@ -370,7 +439,7 @@
 
 <footer>
   <div class="wrap">
-    <span>Propuesta preparada para Inmoconecta Huancayo · 2026</span>
+    <span>Propuesta preparada por Kallari para Inmoconecta Huancayo · 2026</span>
     <span>La demo usa nombres, teléfonos y cifras ficticias.</span>
   </div>
 </footer>
@@ -393,6 +462,16 @@
     }
     paint();
     if (!reduce) setInterval(function () { s = s >= 330 ? 20 : s + 1; paint(); }, 1000);
+  })();
+
+  (function () {
+    var b = document.getElementById('copy-phone');
+    var t = document.getElementById('phone');
+    if (!b) return;
+    b.addEventListener('click', function () {
+      function sel() { var r = document.createRange(); r.selectNodeContents(t); var s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = 'Seleccionado'; }
+      try { navigator.clipboard.writeText('+51 941 571 821').then(function () { b.textContent = 'Copiado'; }, sel); } catch (e) { sel(); }
+    });
   })();
 </script>
 </body>

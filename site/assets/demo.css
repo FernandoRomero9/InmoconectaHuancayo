@@ -449,3 +449,5 @@ svg.i12 { width: 13px; height: 13px; vertical-align: -2px; }
   .toast:not(:last-child) { display: none; }
 }
 .top .sub { overflow-wrap: anywhere; }
+.made-by { display: flex; align-items: center; gap: 8px; padding: 0 8px; font-size: 11.5px; color: var(--side-muted); }
+.made-by img { height: 26px; width: auto; border-radius: 6px; }
