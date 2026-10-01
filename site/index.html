@@ -9,9 +9,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="assets/base.css">
+<script src="assets/theme.js"></script>
 <style>
   /* Layout: columna de lectura de 1120px, todo en blanco; la banda del recorrido se separa con un gris muy claro. */
-  :root { --band: #f3f3f0; --band-ink: var(--ink); --band-muted: var(--ink-2); --band-line: var(--line-strong); --band-accent: var(--accent); }
+  :root { --band: var(--surface-2); --band-ink: var(--ink); --band-muted: var(--ink-2); --band-line: var(--line-strong); --band-accent: var(--accent); }
 
   .wrap { max-width: 1120px; margin: 0 auto; padding-inline: 24px; }
   header.bar { padding-block: 18px; }
@@ -141,6 +142,7 @@
   footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 
 
+  .bar-actions { display: flex; align-items: center; gap: 10px; }
   .logo .kallari { display: inline-flex; background: #f5efe2; border-radius: 10px; padding: 0 4px; line-height: 0; }
   .logo .kallari img { height: 36px; width: auto; }
   .logo-for { font-size: 16px; }
@@ -201,7 +203,7 @@
 <header class="bar">
   <div class="wrap">
     <div class="logo"><span class="kallari"><img src="assets/kallari-logo.png" width="123" height="43" alt="Kallari"></span><span class="logo-for">Propuesta CRM <small>para Inmoconecta</small></span></div>
-    <a class="btn sm" href="demo.html">Abrir la demo</a>
+    <div class="bar-actions"><button type="button" class="theme-toggle" data-theme-toggle></button><a class="btn sm" href="demo.html">Abrir la demo</a></div>
   </div>
 </header>
 

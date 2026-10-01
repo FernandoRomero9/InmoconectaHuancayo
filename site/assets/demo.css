@@ -9,7 +9,7 @@ body { overflow: hidden; }
 /* ---------- Barra lateral ---------- */
 .side { border-right: 1px solid var(--line); background: var(--side-bg); color: var(--side-ink); display: flex; flex-direction: column; padding: 20px 12px 14px; gap: 22px; overflow-y: auto; min-height: 0; }
 .brand { display: flex; align-items: center; gap: 10px; padding: 0 8px; }
-.brand-mark { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; background: var(--ink); color: #fff; font-family: var(--font-display); font-weight: 800; font-size: 17px; }
+.brand-mark { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; background: var(--ink); color: var(--bg); font-family: var(--font-display); font-weight: 800; font-size: 17px; }
 .brand-name { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--ink); line-height: 1.1; }
 .brand-sub { font-size: 11.5px; color: var(--side-muted); }
 .nav { display: flex; flex-direction: column; gap: 2px; }
@@ -74,7 +74,7 @@ a.kpi:hover { border-color: var(--accent); }
 .kpi .value { font-family: var(--font-display); font-size: 30px; font-weight: 700; line-height: 1.15; }
 .kpi .value small { font-size: 15px; color: var(--ink-2); }
 .kpi .foot { font-size: 12.5px; color: var(--muted); }
-.kpi.alert { border-color: #f0d2d2; }
+.kpi.alert { border-color: var(--crit-line); }
 .kpi.alert .value { color: var(--crit); }
 .kpi.warn .value { color: var(--warn); }
 
@@ -421,7 +421,7 @@ dl.kv { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr
 .card, .kpi, .llist, .prop, .flist > .frow, .panel { border: 1px solid var(--line); box-shadow: none; }
 .kpi { border-color: var(--line); }
 a.kpi:hover, .prop:hover { border-color: var(--accent); }
-.kpi.alert { border-color: #f0d2d2; }
+.kpi.alert { border-color: var(--crit-line); }
 .card .frow { border: 1px solid var(--line); background: var(--surface); }
 .col { background: var(--surface-2); }
 .kcard { border-color: var(--line); }
@@ -430,3 +430,8 @@ a.kpi:hover, .prop:hover { border-color: var(--accent); }
 /* El cajón cerrado no debe proyectar sombra sobre la página */
 .drawer { visibility: hidden; transition: transform .24s cubic-bezier(.2,.7,.2,1), visibility 0s linear .24s; }
 .drawer.show { visibility: visible; transition: transform .24s cubic-bezier(.2,.7,.2,1); }
+
+/* Perla: el fondo nácar se ve detrás del área de trabajo */
+.app { background: transparent; }
+.main, .view, .top { background: transparent; }
+.theme-toggle { margin-left: 2px; }

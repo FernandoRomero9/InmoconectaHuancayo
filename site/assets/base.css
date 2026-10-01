@@ -1,34 +1,37 @@
 /* Sistema visual compartido: propuesta + demo.
-   Concepto: blanco limpio y elegante. Fondo casi blanco, superficies blancas con líneas finas,
-   tinta casi negra y un solo acento verde petróleo profundo. Siempre en modo claro (elección de diseño). */
+   Concepto «perla»: fondo nácar con un brillo suave, superficies blanco perla, tinta grafito
+   y un acento verde petróleo. El modo noche invierte a grafito profundo con texto perla.
+   El tema lo elige la persona con el interruptor (atributo data-theme en <html>). */
 :root {
   color-scheme: light;
-  --bg: #fafaf8;
-  --surface: #ffffff;
-  --surface-2: #f3f3f0;
-  --surface-3: #e6e6e1;
-  --ink: #16181a;
-  --ink-2: #4b4f54;
-  --muted: #898d92;
-  --line: #ebebe7;
-  --line-strong: #d8d8d2;
-  --accent: #0e5c5a;
-  --accent-hover: #0a4846;
+  --bg: #f4f2ee;
+  --bg-sheen: radial-gradient(1100px 520px at 12% -8%, rgba(255,255,255,.95) 0%, rgba(255,255,255,0) 62%), radial-gradient(900px 480px at 100% 0%, rgba(236,230,240,.55) 0%, rgba(236,230,240,0) 60%);
+  --surface: #fdfcfa;
+  --surface-2: #efece6;
+  --surface-3: #e3dfd7;
+  --ink: #1f2226;
+  --ink-2: #50545b;
+  --muted: #8b8e94;
+  --line: #e7e3db;
+  --line-strong: #d6d1c7;
+  --accent: #1c5b58;
+  --accent-hover: #144745;
   --accent-ink: #ffffff;
-  --accent-soft: #edf4f3;
-  --gold: #946613;
-  --gold-soft: #f8f2e4;
-  --ok: #23784a;
-  --ok-soft: #ebf5ef;
-  --warn: #92640d;
-  --warn-soft: #fbf4e3;
-  --crit: #b33434;
-  --crit-soft: #fbeeee;
+  --accent-soft: #e9f1ef;
+  --gold: #8f6a24;
+  --gold-soft: #f5eedf;
+  --ok: #2a7650;
+  --ok-soft: #e8f2ec;
+  --warn: #8e6512;
+  --warn-soft: #f8f0dd;
+  --crit: #b13b3b;
+  --crit-soft: #f8eaea;
+  --crit-line: #ecd0d0;
   --crit-deep: #7d1515;
   --series-1: #2a78d6;
   --series-2: #eb6834;
   --series-3: #1baf7a;
-  --shadow: 0 1px 2px rgba(22, 24, 26, .04), 0 12px 32px -16px rgba(22, 24, 26, .14);
+  --shadow: 0 1px 2px rgba(31, 34, 38, .04), 0 14px 34px -18px rgba(31, 34, 38, .18);
   --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
   --font-body: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -36,12 +39,45 @@
   --r-md: 10px;
   --r-lg: 16px;
 }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #121315;
+  --bg-sheen: radial-gradient(1100px 520px at 12% -8%, rgba(120,150,146,.10) 0%, rgba(120,150,146,0) 62%), radial-gradient(900px 480px at 100% 0%, rgba(150,140,170,.08) 0%, rgba(150,140,170,0) 60%);
+  --surface: #1a1c1f;
+  --surface-2: #232529;
+  --surface-3: #2e3135;
+  --ink: #eeebe5;
+  --ink-2: #b9b6b0;
+  --muted: #85858a;
+  --line: #2a2c30;
+  --line-strong: #3a3d42;
+  --accent: #7cc6bd;
+  --accent-hover: #9ad6ce;
+  --accent-ink: #0f1a19;
+  --accent-soft: #1d2d2c;
+  --gold: #d8b36a;
+  --gold-soft: #2e281b;
+  --ok: #6fc394;
+  --ok-soft: #1a2b22;
+  --warn: #dcae5a;
+  --warn-soft: #2f2716;
+  --crit: #ee8282;
+  --crit-soft: #321e1f;
+  --crit-line: #4a2a2b;
+  --crit-deep: #ffb0b0;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 14px 34px -18px rgba(0, 0, 0, .7);
+}
 
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
   background: var(--bg);
+  background-image: var(--bg-sheen);
+  background-attachment: fixed;
   color: var(--ink);
   font-family: var(--font-body);
   font-size: 15px;
@@ -86,3 +122,26 @@ button, input, select, textarea { font: inherit; color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* ---------- Interruptor de tema (sol / luna) ---------- */
+.theme-toggle {
+  position: relative; display: inline-flex; align-items: center; justify-content: space-between;
+  width: 64px; height: 32px; padding: 0 8px; border-radius: 999px; cursor: pointer; flex: none;
+  border: 1px solid var(--line-strong); background: var(--surface-2);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.06);
+  transition: background .3s, border-color .3s;
+}
+.theme-toggle svg { width: 14px; height: 14px; position: relative; z-index: 1; transition: color .3s, opacity .3s; }
+.theme-toggle .sun { color: var(--gold); }
+.theme-toggle .moon { color: var(--muted); }
+.theme-toggle .knob {
+  position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%;
+  background: linear-gradient(145deg, #ffffff, #ece7de);
+  box-shadow: 0 1px 3px rgba(0,0,0,.18), inset 0 0 0 1px rgba(255,255,255,.6);
+  transition: transform .35s cubic-bezier(.3,1.4,.5,1), background .3s;
+}
+.theme-toggle:hover { border-color: var(--accent); }
+:root[data-theme="dark"] .theme-toggle .knob { transform: translateX(32px); background: linear-gradient(145deg, #3a3e44, #24272b); box-shadow: 0 1px 3px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.08); }
+:root[data-theme="dark"] .theme-toggle .sun { color: var(--muted); }
+:root[data-theme="dark"] .theme-toggle .moon { color: #e6dcc0; }
+.theme-switching, .theme-switching * { transition: background-color .35s, color .35s, border-color .35s !important; }
