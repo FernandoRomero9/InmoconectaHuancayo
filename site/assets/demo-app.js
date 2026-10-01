@@ -10,11 +10,16 @@
 
   /* ================= Estado ================= */
   let S;
+  let UI_RESET_NOTICE = false;
   const fresh = () => D.build(Date.now());
   function load() {
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) { const s = JSON.parse(raw); if (s && s.version === 4 && Date.now() - s.builtAt < 24 * HOUR) return s; }
+      if (raw) {
+        const s = JSON.parse(raw);
+        if (s && s.version === 4 && Date.now() - s.builtAt < 7 * DAY) return s;
+        if (s) UI_RESET_NOTICE = true;
+      }
     } catch (e) { /* sin almacenamiento */ }
     return fresh();
   }
@@ -100,6 +105,19 @@
   const group = src => D.SOURCES[src].group;
   const loads = () => { const m = {}; S.leads.forEach(x => { if (isOpen(x)) m[x.agent] = (m[x.agent] || 0) + 1; }); return m; };
   const rec = (l, agents) => D.recommend(l, agents || S.agents, loads());
+  // Derivación automática: respeta el interruptor de la automatización «Derivación por perfil»
+  function autoRoute(l) {
+    const on = (S.automations.find(a => a.key === 'assign') || {}).on;
+    if (!on) return { agent: agent('a1'), reason: 'Derivación automática apagada: Alberto asigna manualmente', ok: false };
+    return rec(l);
+  }
+  const fold = v => String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  function matches(text, phone, q) {
+    const nq = fold(q).trim();
+    if (!nq) return true;
+    const digits = nq.replace(/\D/g, '');
+    return fold(text).includes(nq) || (digits.length >= 3 && String(phone || '').replace(/\D/g, '').includes(digits));
+  }
   const responseMins = l => l.firstResponse ? (l.firstResponse - l.created) / MIN : null;
   function commission(l) {
     if (l.tipo === 'venta') return l.precio * 0.03 * FX;
@@ -173,7 +191,7 @@
   function route() {
     let h = (location.hash || '').replace('#', '');
     if (ALIAS[h]) {
-      ({ urgentes: () => { UI.seg = 'sin'; }, agenda: () => { UI.seg = 'citas'; }, captacion: () => { UI.tipo = 'venta'; }, campanas: () => { UI.rep.tab = 'campanas'; }, trazabilidad: () => { UI.rep.tab = 'embudo'; }, equipo: () => { UI.aj.tab = 'asesores'; }, automatizaciones: () => { UI.aj.tab = 'auto'; }, integraciones: () => { UI.aj.tab = 'integ'; } }[h] || (() => {}))();
+      ({ urgentes: () => { UI.seg = 'sin'; }, agenda: () => { UI.seg = 'citas'; }, captacion: () => { UI.tipo = 'venta'; try { localStorage.setItem(KEY + ':tipo', 'venta'); } catch (e) { /* nada */ } }, campanas: () => { UI.rep.tab = 'campanas'; }, trazabilidad: () => { UI.rep.tab = 'embudo'; }, equipo: () => { UI.aj.tab = 'asesores'; }, automatizaciones: () => { UI.aj.tab = 'auto'; }, integraciones: () => { UI.aj.tab = 'integ'; } }[h] || (() => {}))();
       h = ALIAS[h];
       try { history.replaceState(null, '', '#' + h); } catch (e) { /* nada */ }
     }
@@ -241,6 +259,7 @@
       '<span class="tipo-hint">' + (UI.tipo === 'compra' ? 'Solo personas que quieren <b>comprar</b>' : UI.tipo === 'venta' ? 'Solo propietarios que quieren <b>vender</b>' : 'Compra y venta, cada uno en su bloque') + '</span>';
   }
   function rerenderSoft() {
+    if (UI.dragging) { renderNav(); return; }
     const a = document.activeElement;
     if (a && $('#view').contains(a) && /INPUT|SELECT|TEXTAREA/.test(a.tagName)) { renderNav(); return; }
     const y = $('#view').scrollTop;
@@ -379,7 +398,7 @@
     const f = UI.leads;
     const tipo = UI.tipo;
     let ls = byTipo(S.leads);
-    if (f.q) { const q = f.q.toLowerCase(); ls = ls.filter(l => (l.name + ' ' + l.phone + ' ' + l.id + ' ' + (l.interest || '') + ' ' + (l.zona || '')).toLowerCase().includes(q)); }
+    if (f.q) ls = ls.filter(l => matches(l.name + ' ' + l.id + ' ' + (l.interest || '') + ' ' + (l.zona || ''), l.phone, f.q));
     if (tipo === 'compra' && f.pago) ls = ls.filter(l => l.pago === f.pago);
     if (tipo === 'venta' && f.titulo) ls = ls.filter(l => (f.titulo === 'si') === !!l.aNombre);
     if (f.agent) ls = ls.filter(l => l.agent === f.agent);
@@ -440,13 +459,13 @@
     $('#pf-agent').addEventListener('change', e => { UI.pipe.agent = e.target.value; render(); });
     let dragId = null;
     $$('.kcard').forEach(c => {
-      c.addEventListener('dragstart', e => { dragId = c.dataset.lead; c.classList.add('dragging'); try { e.dataTransfer.setData('text/plain', dragId); } catch (x) { /* nada */ } });
+      c.addEventListener('dragstart', e => { dragId = c.dataset.lead; UI.dragging = true; c.classList.add('dragging'); try { e.dataTransfer.setData('text/plain', dragId); } catch (x) { /* nada */ } });
       c.addEventListener('dragend', () => c.classList.remove('dragging'));
     });
     $$('.col').forEach(col => {
       col.addEventListener('dragover', e => { e.preventDefault(); col.classList.add('drop'); });
       col.addEventListener('dragleave', () => col.classList.remove('drop'));
-      col.addEventListener('drop', e => { e.preventDefault(); col.classList.remove('drop'); const l = dragId && lead(dragId); if (l && l.tipo === col.dataset.tipo) setStage(l, col.dataset.stage); else if (l) toast('No se puede mover ahí', 'Un lead de ' + l.tipo + ' solo se mueve en su propio tablero'); dragId = null; });
+      col.addEventListener('drop', e => { e.preventDefault(); col.classList.remove('drop'); let id = dragId; try { id = id || e.dataTransfer.getData('text/plain'); } catch (x) { /* nada */ } UI.dragging = false; const l = id && lead(id); if (l && l.tipo === col.dataset.tipo) setStage(l, col.dataset.stage); else if (l) toast('No se puede mover ahí', 'Un lead de ' + l.tipo + ' solo se mueve en su propio tablero'); dragId = null; });
     });
   };
 
@@ -624,9 +643,12 @@
     requestAnimationFrame(() => { $('#scrim').classList.add('show'); d.classList.add('show'); });
     d.setAttribute('aria-hidden', 'false');
     document.documentElement.classList.add('drawer-open');
+    // El botón «Atrás» del navegador cierra la ficha en lugar de salir de la pantalla
+    if (!UI.drawerHist) { try { history.pushState({ drawer: 1 }, ''); UI.drawerHist = true; } catch (e) { /* nada */ } }
     tickTimers();
   }
-  function closeDrawer() {
+  function closeDrawer(fromNav) {
+    if (UI.drawerHist) { UI.drawerHist = false; if (!fromNav) { try { history.back(); } catch (e) { /* nada */ } } }
     UI.drawer = null;
     const d = $('#drawer');
     d.classList.remove('show'); $('#scrim').classList.remove('show');
@@ -750,8 +772,9 @@
       $('#in-credito-f').hidden = !(d.tipo === 'compra' && d.pago === 'Crédito');
       $('#in-detalle-f').hidden = !(d.tipo === 'venta' && !d.aNombre);
       $('#in-monto-l').textContent = d.tipo === 'venta' ? 'Precio que espera (US$)' : 'Presupuesto (US$)';
-      const r = D.recommend(d, S.agents);
-      $('#in-route').innerHTML = ic('route') + '<div><span class="small muted">Se derivará a</span><b>' + esc(agentName(r.agent.id)) + '</b><small>Perfil: ' + esc(r.reason) + '</small></div>';
+      const r = autoRoute(d);
+      $('#in-route').classList.toggle('warn', !r.ok);
+      $('#in-route').innerHTML = ic('route') + '<div><span class="small muted">Se derivará a</span><b>' + esc(agentName(r.agent.id)) + '</b><small>' + (r.ok ? 'Perfil: ' : '') + esc(r.reason) + '</small></div>';
       $('#in-route').dataset.agent = r.agent.id;
     };
     f.addEventListener('change', update);
@@ -760,6 +783,7 @@
       e.preventDefault();
       const name = $('#in-name').value.trim(), phone = $('#in-phone').value.trim();
       if (!name || !phone) { $('#form-err').textContent = 'Completa nombre y teléfono.'; return; }
+      if ((phone.match(/\d/g) || []).length < 6) { $('#form-err').textContent = 'El teléfono debe tener al menos 6 dígitos.'; return; }
       const d = draft();
       const t = now();
       const ag = $('#in-route').dataset.agent;
@@ -795,10 +819,14 @@
   /* ================= Acciones ================= */
   function log(text) { S.log = S.log || []; S.log.push({ at: now(), text }); if (S.log.length > 60) S.log.shift(); }
   function addEvent(l, type, text, by) { l.events.push({ at: now(), type, text, by: by || null }); }
-  function refreshAfter(l, panel) {
+  function refreshAfter(l, panel, system) {
     l.score = D.scoreLead(l);
     save();
-    if (UI.drawer && UI.drawer.kind === 'lead' && UI.drawer.id === l.id) leadDrawer(l.id, panel || '');
+    if (UI.drawer && UI.drawer.kind === 'lead' && UI.drawer.id === l.id) {
+      const a = document.activeElement;
+      const typing = a && $('#drawer').contains(a) && /INPUT|SELECT|TEXTAREA/.test(a.tagName);
+      if (!(system && typing)) leadDrawer(l.id, system ? UI.drawer.panel : (panel || ''));
+    }
     rerenderSoft();
   }
   function setNext(l, days, text) { l.next = { at: now() + days * DAY, text: text || D.NEXT[l.tipo][l.stage] || 'Llamar' }; }
@@ -820,7 +848,7 @@
     l.agent = to;
     addEvent(l, 'auto', 'Derivado de ' + agentName(from) + ' a ' + agentName(to) + ' · perfil «' + agent(to).perfil + '»' + (why === 'sla' ? ' (15 min sin respuesta)' : ''), why === 'sla' ? null : 'a1');
     if (why !== 'sla') toast('Lead derivado', l.name + ' → ' + agentName(to));
-    refreshAfter(l);
+    refreshAfter(l, '', why === 'sla');
   }
   function registerCall(l) {
     const t = now();
@@ -919,11 +947,13 @@
   }
   function simulateLead() {
     const l = D.incoming(S, now());
-    const best = rec(l).agent;
+    const routed = autoRoute(l);
+    const best = routed.agent;
     if (best.id !== l.agent) { l.agent = best.id; l.events.forEach(e => { if (e.type === 'auto' && /^Derivado a/.test(e.text)) e.text = 'Derivado a ' + agentName(best.id) + ' · perfil «' + best.perfil + '»'; }); }
     const welcomeOn = S.automations.find(a => a.key === 'welcome').on;
     if (!welcomeOn) l.events = l.events.filter(e => !/^WhatsApp de bienvenida/.test(e.text));
     S.leads.unshift(l);
+    if (!routed.ok) l.events.push({ at: now() + 2, type: 'auto', text: routed.reason, by: null });
     const ag = agent(l.agent);
     log('Lead ' + l.id + ' (' + l.tipo + ') derivado a ' + agentName(l.agent) + ' por perfil «' + ag.perfil + '»');
     S.automations.forEach(a => { if ((a.key === 'assign' || a.key === 'welcome') && a.on) a.runs++; });
@@ -963,7 +993,7 @@
     const box = $('#search-results');
     q = q.trim().toLowerCase();
     if (q.length < 2) { box.hidden = true; return; }
-    const ls = S.leads.filter(l => (l.name + ' ' + l.phone + ' ' + l.id).toLowerCase().includes(q)).slice(0, 6);
+    const ls = S.leads.filter(l => matches(l.name + ' ' + l.id, l.phone, q)).slice(0, 6);
     const ps = S.properties.filter(p => (p.id + ' ' + p.address + ' ' + p.district).toLowerCase().includes(q)).slice(0, 3);
     box.innerHTML = (ls.map(l => '<button data-lead="' + l.id + '"><span><b>' + esc(l.name) + '</b><small>' + l.id + ' · ' + (l.tipo === 'venta' ? 'Venta' : 'Compra') + ' · ' + esc(sLabel(l)) + '</small></span></button>').join('') +
       ps.map(p => '<button data-prop="' + p.id + '"><span><b>' + p.id + ' · ' + esc(p.type) + '</b><small>' + esc(p.address) + '</small></span></button>').join('')) || empty('Sin resultados para «' + esc(q) + '»');
@@ -999,9 +1029,11 @@
       if (b) { const k = b.dataset.sheet; closeSheet(); if (k === 'sim') simulateLead(); if (k === 'live') lt.click(); if (k === 'reset') $('#reset-demo').click(); return; }
       if (e.target.closest('a')) closeSheet();
     });
-    window.addEventListener('hashchange', () => { closeDrawer(); render(); $('#view').scrollTop = 0; });
+    window.addEventListener('hashchange', () => { closeDrawer(true); render(); $('#view').scrollTop = 0; });
+    window.addEventListener('popstate', () => { if (UI.drawer) closeDrawer(true); });
     setLive(UI.live);
     render();
+    if (UI_RESET_NOTICE) { save(); toast('Demo actualizada', 'Pasó más de una semana: se cargaron datos de ejemplo nuevos'); }
     setInterval(tickTimers, 1000);
     setInterval(slaCheck, 3000);
     setInterval(() => { if (!UI.drawer) rerenderSoft(); else renderNav(); }, 60000);

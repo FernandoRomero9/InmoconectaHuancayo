@@ -504,3 +504,5 @@ a.kpi:hover, .prop:hover { border-color: var(--accent); }
   .tipo-switch button b { padding: 1px 5px; }
 }
 @media (max-width: 370px) { .tipo-switch button i { display: none; } }
+.route-box.warn { background: var(--warn-soft); }
+.route-box.warn svg { color: var(--warn); }

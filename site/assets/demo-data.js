@@ -90,22 +90,26 @@
   ];
 
   // Elige el asesor cuyo perfil encaja mejor con el lead
+  // Si nadie en turno tiene un perfil compatible, el lead va a Alberto (bróker) para que lo asigne.
   function recommend(l, agents, loads) {
-    const pool = agents.filter(a => a.rr);
     const load = id => (loads && loads[id]) || 0;
+    const pool = agents.filter(a => a.rr && a.onDuty);
     const scored = pool.map(a => {
       let s = 0;
       const m = a.match || {};
+      const general = !m.tipo;
       if (m.tipo === l.tipo) s += 10;
+      else if (general) s += 5;
+      else return { a, s: -1 };
       if (l.tipo === 'compra') {
         if (m.propTipos && m.propTipos.includes(l.propTipo)) s += 8;
         if (m.pago && m.pago.includes(l.pago)) s += 6;
       }
-      if (!a.onDuty) s -= 30;
-      return { a, s: s - load(a.id) * 0.01 };
-    }).sort((x, y) => y.s - x.s);
-    const a = scored[0].a;
-    return { agent: a, reason: a.perfil };
+      return { a, s };
+    }).filter(x => x.s >= 0).sort((x, y) => (y.s - x.s) || (load(x.a.id) - load(y.a.id)));
+    if (scored.length) return { agent: scored[0].a, reason: scored[0].a.perfil, ok: true };
+    const boss = agents.find(a => a.id === 'a1') || agents[0];
+    return { agent: boss, reason: 'Nadie en turno con un perfil para este lead; Alberto lo asigna', ok: false };
   }
 
   const OWNERS = [
