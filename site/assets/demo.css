@@ -435,3 +435,41 @@ a.kpi:hover, .prop:hover { border-color: var(--accent); }
 .app { background: transparent; }
 .main, .view, .top { background: transparent; }
 .theme-toggle { margin-left: 2px; }
+
+/* ---------- Selector global Compra / Venta ---------- */
+.tipo-bar { display: flex; align-items: center; gap: 12px; padding: 0 28px 14px; flex-wrap: wrap; }
+.tipo-label { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.tipo-switch { display: inline-flex; gap: 4px; padding: 4px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
+.tipo-switch button { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border: 0; border-radius: 10px; background: none; cursor: pointer; font-size: 14.5px; font-weight: 600; color: var(--ink-2); transition: background .2s, color .2s; }
+.tipo-switch button i { width: 9px; height: 9px; border-radius: 50%; }
+.tipo-switch button.c i { background: var(--accent); }
+.tipo-switch button.v i { background: var(--gold); }
+.tipo-switch button b { font-family: var(--font-mono); font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); }
+.tipo-switch button:hover { color: var(--ink); }
+.tipo-switch button.on { background: var(--ink); color: var(--bg); }
+.tipo-switch button.on b { background: rgba(127,127,127,.25); color: inherit; }
+.tipo-switch button.c.on { background: var(--accent); color: var(--accent-ink); }
+.tipo-switch button.v.on { background: var(--gold); color: var(--surface); }
+.tipo-switch button.on i { background: currentColor; }
+.tipo-hint { font-size: 13px; color: var(--muted); }
+.tipo-hint b { color: var(--ink); }
+
+.tblocks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.tblock { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.tblock-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-left: 14px; border-left: 3px solid var(--accent); }
+.tblock.venta .tblock-head { border-left-color: var(--gold); }
+.tblock-head h2 { font-size: 19px; margin-top: 4px; }
+.tblock-head p { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.tblocks .lrow { grid-template-columns: minmax(0, 1fr) auto; }
+.tblocks .lrow-tags .tipo { display: none; }
+.tblocks .lrow-stage, .tblocks .lrow-time { display: none; }
+.tblocks .lrow-agent > span:not(.avatar) { display: none; }
+.list-head { display: flex; align-items: center; gap: 10px; font-size: 15px; }
+.view-inner > .tblock + .tblock { margin-top: 12px; }
+@media (max-width: 1100px) { .tblocks { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 900px) {
+  .tipo-bar { padding: 0 16px 12px; gap: 8px; }
+  .tipo-label, .tipo-hint { display: none; }
+  .tipo-switch { width: 100%; }
+  .tipo-switch button { flex: 1; justify-content: center; padding: 9px 6px; font-size: 14px; }
+}

@@ -31,7 +31,15 @@
     drawer: null,
     lastTick: Date.now()
   };
-  try { UI.live = localStorage.getItem(KEY + ':live') === '1'; } catch (e) { /* nada */ }
+  UI.tipo = '';
+  try { UI.live = localStorage.getItem(KEY + ':live') === '1'; UI.tipo = localStorage.getItem(KEY + ':tipo') || ''; } catch (e) { /* nada */ }
+  // Filtro global Compra / Venta: se aplica a todas las pantallas de leads
+  const byTipo = ls => UI.tipo ? ls.filter(l => l.tipo === UI.tipo) : ls;
+  function setTipo(t) {
+    UI.tipo = t; UI.leads.pago = ''; UI.leads.titulo = ''; UI.leads.limit = 40;
+    try { localStorage.setItem(KEY + ':tipo', t); } catch (e) { /* nada */ }
+    render();
+  }
 
   /* ================= Utilidades ================= */
   const $ = (s, el) => (el || document).querySelector(s);
@@ -174,12 +182,13 @@
   function followGroups() {
     const t = now();
     const end = dayStart(1);
-    const open = S.leads.filter(l => isOpen(l) && !unattended(l));
+    const base = byTipo(S.leads);
+    const open = base.filter(l => isOpen(l) && !unattended(l));
     return {
-      sin: S.leads.filter(unattended).sort((a, b) => a.created - b.created),
+      sin: base.filter(unattended).sort((a, b) => a.created - b.created),
       vencidos: open.filter(l => l.next && l.next.at < t).sort((a, b) => a.next.at - b.next.at),
       hoy: open.filter(l => l.next && l.next.at >= t && l.next.at < end).sort((a, b) => a.next.at - b.next.at),
-      citas: S.leads.filter(l => isOpen(l) && l.visitAt && l.visitAt >= t - 2 * HOUR && l.visitAt < dayStart(7)).sort((a, b) => a.visitAt - b.visitAt),
+      citas: base.filter(l => isOpen(l) && l.visitAt && l.visitAt >= t - 2 * HOUR && l.visitAt < dayStart(7)).sort((a, b) => a.visitAt - b.visitAt),
       proximos: open.filter(l => l.next && l.next.at >= end && l.next.at < dayStart(8)).sort((a, b) => a.next.at - b.next.at)
     };
   }
@@ -213,9 +222,21 @@
     $('#page-sub').textContent = SUBS[r]();
     document.title = meta.title + ' · Inmoconecta CRM';
     renderNav();
+    renderTipoBar(r);
     $('#view').innerHTML = '<div class="view-inner">' + VIEWS[r]() + '</div>';
     if (AFTER[r]) AFTER[r]();
     tickTimers();
+  }
+  const TIPO_ROUTES = ['inicio', 'seguimiento', 'leads', 'pipeline', 'reportes'];
+  function renderTipoBar(r) {
+    const bar = $('#tipo-bar');
+    if (!TIPO_ROUTES.includes(r)) { bar.hidden = true; return; }
+    bar.hidden = false;
+    const open = S.leads.filter(isOpen);
+    const n = t => open.filter(l => !t || l.tipo === t).length;
+    const b = (t, label, cls) => '<button type="button" role="tab" data-settipo="' + t + '" class="' + cls + (UI.tipo === t ? ' on' : '') + '" aria-selected="' + (UI.tipo === t) + '">' + (cls ? '<i></i>' : '') + '<span>' + label + '</span><b>' + n(t) + '</b></button>';
+    bar.innerHTML = '<span class="tipo-label">Ver</span><div class="tipo-switch" role="tablist" aria-label="Ver compra o venta">' + b('', 'Todos', '') + b('compra', 'Compra', 'c') + b('venta', 'Venta', 'v') + '</div>' +
+      '<span class="tipo-hint">' + (UI.tipo === 'compra' ? 'Solo personas que quieren <b>comprar</b>' : UI.tipo === 'venta' ? 'Solo propietarios que quieren <b>vender</b>' : 'Compra y venta, cada uno en su bloque') + '</span>';
   }
   function rerenderSoft() {
     const a = document.activeElement;
@@ -279,8 +300,8 @@
     const t = now();
     const g = followGroups();
     const oldest = g.sin.length ? t - g.sin[0].created : 0;
-    const today = S.leads.filter(l => isToday(l.created));
-    const wins = S.leads.filter(l => l.stage === 'ganado' && inLast(30, stageAt(l)));
+    const today = byTipo(S.leads).filter(l => isToday(l.created));
+    const wins = byTipo(S.leads).filter(l => l.stage === 'ganado' && inLast(30, stageAt(l)));
     const attention = g.sin.map(l => followRow(l, 'sin')).concat(g.vencidos.slice(0, 3).map(l => followRow(l, 'next'))).slice(0, 6).join('');
     const citasHoy = g.citas.filter(l => isToday(l.visitAt));
     const l30 = S.leads.filter(l => inLast(30, l.created));
@@ -303,7 +324,7 @@
   function dailyChart(days) {
     const start = dayStart(-(days - 1));
     const b = Array.from({ length: days }, (_, i) => ({ at: start + i * DAY, compra: 0, venta: 0 }));
-    S.leads.forEach(l => { const i = Math.floor((l.created - start) / DAY); if (i >= 0 && i < days) b[i][l.tipo]++; });
+    byTipo(S.leads).forEach(l => { const i = Math.floor((l.created - start) / DAY); if (i >= 0 && i < days) b[i][l.tipo]++; });
     const max = Math.ceil(Math.max(4, ...b.map(x => x.compra + x.venta)) / 4) * 4;
     const W = 720, H = 190, L = 28, B = 22, T = 6, R = 4, cw = (W - L - R) / days;
     const y = v => T + (H - T - B) * (1 - v / max);
@@ -354,29 +375,36 @@
 
   VIEWS.leads = function () {
     const f = UI.leads;
-    let ls = S.leads.slice();
-    if (f.tipo) ls = ls.filter(l => l.tipo === f.tipo);
+    const tipo = UI.tipo;
+    let ls = byTipo(S.leads);
     if (f.q) { const q = f.q.toLowerCase(); ls = ls.filter(l => (l.name + ' ' + l.phone + ' ' + l.id + ' ' + (l.interest || '') + ' ' + (l.zona || '')).toLowerCase().includes(q)); }
-    if (f.tipo === 'compra' && f.pago) ls = ls.filter(l => l.pago === f.pago);
-    if (f.tipo === 'venta' && f.titulo) ls = ls.filter(l => (f.titulo === 'si') === !!l.aNombre);
+    if (tipo === 'compra' && f.pago) ls = ls.filter(l => l.pago === f.pago);
+    if (tipo === 'venta' && f.titulo) ls = ls.filter(l => (f.titulo === 'si') === !!l.aNombre);
     if (f.agent) ls = ls.filter(l => l.agent === f.agent);
     if (f.stage === 'open') ls = ls.filter(isOpen); else if (f.stage === 'perdido') ls = ls.filter(l => l.stage === 'perdido'); else if (f.stage === 'ganado') ls = ls.filter(l => l.stage === 'ganado');
     ls.sort((a, b) => (unattended(b) - unattended(a)) || (b.created - a.created));
-    const chips = f.tipo === 'compra'
-      ? segBtns('lf-pago', [['', 'Todos'], ['Contado', 'Contado'], ['Crédito', 'Crédito'], ['No sabe', 'No sabe']], f.pago)
-      : f.tipo === 'venta' ? segBtns('lf-titulo', [['', 'Todos'], ['si', 'A su nombre'], ['no', 'No a su nombre']], f.titulo) : '';
-    return '<div class="toolbar">' + segBtns('lf-tipo', [['', 'Todos'], ['compra', 'Compra'], ['venta', 'Venta']], f.tipo) +
-      '<input type="search" id="lf-q" placeholder="Buscar nombre, teléfono o código" value="' + esc(f.q) + '" aria-label="Buscar leads"></div>' +
-      '<div class="toolbar">' + chips +
+    const chips = tipo === 'compra'
+      ? segBtns('lf-pago', [['', 'Todas las formas de pago'], ['Contado', 'Contado'], ['Crédito', 'Crédito'], ['No sabe', 'No sabe']], f.pago)
+      : tipo === 'venta' ? segBtns('lf-titulo', [['', 'Todos'], ['si', 'A su nombre'], ['no', 'No a su nombre']], f.titulo) : '';
+    const tools = '<div class="toolbar"><input type="search" id="lf-q" placeholder="Buscar nombre, teléfono o código" value="' + esc(f.q) + '" aria-label="Buscar leads">' +
       '<select id="lf-agent" aria-label="Asesor">' + opt('', 'Todos los asesores', f.agent) + S.agents.map(a => opt(a.id, agentName(a.id), f.agent)).join('') + '</select>' +
-      '<select id="lf-stage" aria-label="Estado">' + opt('open', 'Abiertos', f.stage) + opt('ganado', 'Cerrados', f.stage) + opt('perdido', 'Perdidos', f.stage) + opt('all', 'Todos', f.stage) + '</select>' +
-      '<span class="muted small push">' + ls.length + ' leads</span></div>' +
+      '<select id="lf-stage" aria-label="Estado">' + opt('open', 'Abiertos', f.stage) + opt('ganado', 'Cerrados', f.stage) + opt('perdido', 'Perdidos', f.stage) + opt('all', 'Todos', f.stage) + '</select></div>' +
+      (chips ? '<div class="toolbar">' + chips + '</div>' : '');
+    if (!tipo) {
+      const block = (t, title, sub) => {
+        const g = ls.filter(l => l.tipo === t);
+        return '<section class="tblock ' + t + '"><div class="tblock-head"><div><span class="tipo ' + t + '">' + (t === 'venta' ? 'Venta' : 'Compra') + '</span><h2>' + title + '</h2><p>' + sub + '</p></div><button class="btn sm" data-settipo="' + t + '">Ver solo ' + (t === 'venta' ? 'venta' : 'compra') + ' (' + g.length + ') →</button></div>' +
+          '<div class="llist">' + (g.slice(0, 6).map(leadRow).join('') || empty('Sin leads con estos filtros.')) + '</div></section>';
+      };
+      return tools + '<div class="tblocks">' + block('compra', 'Quieren comprar', 'Filtra por contado, crédito o «no sabe»') + block('venta', 'Quieren vender', 'Filtra por si la propiedad está a su nombre') + '</div>';
+    }
+    return tools + '<div class="list-head"><span class="tipo ' + tipo + '">' + (tipo === 'venta' ? 'Venta' : 'Compra') + '</span><b>' + ls.length + (tipo === 'venta' ? ' propietarios que quieren vender' : ' personas que quieren comprar') + '</b></div>' +
       '<div class="llist">' + (ls.slice(0, f.limit).map(leadRow).join('') || empty('Ningún lead coincide con los filtros.')) + '</div>' +
       (ls.length > f.limit ? '<button class="btn more" data-act="more-leads">Ver ' + Math.min(40, ls.length - f.limit) + ' más</button>' : '');
   };
   AFTER.leads = function () {
-    const segBind = (id, key) => $$('#' + id + ' button').forEach(b => b.addEventListener('click', () => { UI.leads[key] = b.dataset.v; if (key === 'tipo') { UI.leads.pago = ''; UI.leads.titulo = ''; } UI.leads.limit = 40; render(); }));
-    segBind('lf-tipo', 'tipo'); segBind('lf-pago', 'pago'); segBind('lf-titulo', 'titulo');
+    const segBind = (id, key) => $$('#' + id + ' button').forEach(b => b.addEventListener('click', () => { UI.leads[key] = b.dataset.v; UI.leads.limit = 40; render(); }));
+    segBind('lf-pago', 'pago'); segBind('lf-titulo', 'titulo');
     $('#lf-agent').addEventListener('change', e => { UI.leads.agent = e.target.value; render(); });
     $('#lf-stage').addEventListener('change', e => { UI.leads.stage = e.target.value; render(); });
     $('#lf-q').addEventListener('input', e => { UI.leads.q = e.target.value; render(); const q = $('#lf-q'); q.focus(); q.setSelectionRange(q.value.length, q.value.length); });
@@ -385,26 +413,28 @@
   VIEWS.pipeline = function () {
     const f = UI.pipe;
     const t = now();
-    const cols = D.STAGES[f.tipo];
-    let ls = S.leads.filter(l => l.tipo === f.tipo && l.stage !== 'perdido' && (l.stage !== 'ganado' || inLast(60, stageAt(l))));
-    if (f.agent) ls = ls.filter(l => l.agent === f.agent);
-    const stuck = f.tipo === 'compra' ? [0.25, 3, 5, 5, 5, 10, 999] : [0.25, 4, 5, 7, 60, 999];
-    return '<div class="toolbar">' + segBtns('pf-tipo', [['compra', 'Compra'], ['venta', 'Venta · captación']], f.tipo) +
-      '<select id="pf-agent" aria-label="Asesor">' + opt('', 'Todos los asesores', f.agent) + S.agents.map(a => opt(a.id, agentName(a.id), f.agent)).join('') + '</select>' +
-      '<span class="muted small push hide-sm">Arrastra una tarjeta para cambiar de etapa</span></div>' +
-      '<div class="board" id="board">' + cols.map((c, ci) => {
-        const items = ls.filter(l => l.stage === c.id).sort((a, b) => b.score - a.score);
-        return '<div class="col" data-stage="' + c.id + '"><div class="col-head"><b>' + c.label + '</b><span>' + items.length + '</span></div>' +
-          items.slice(0, 25).map(l => {
-            const d = (t - stageAt(l)) / DAY;
-            const cls = c.id === 'ganado' ? '' : d > stuck[ci] * 2 ? 'crit' : d > stuck[ci] ? 'warn' : '';
-            return '<div class="kcard" draggable="true" data-lead="' + l.id + '"><div class="row"><span class="name">' + esc(l.name) + '</span><span class="age ' + cls + '">' + dur(t - stageAt(l)) + '</span></div>' +
-              '<div class="meta">' + whatLine(l) + '</div><div class="row">' + keyFact(l) + av(l.agent, 'xs') + '</div></div>';
-          }).join('') + (items.length > 25 ? '<div class="col-more">+ ' + (items.length - 25) + ' más</div>' : '') + (items.length ? '' : '<div class="col-empty">Sin leads</div>') + '</div>';
-      }).join('') + '</div>';
+    const tipos = UI.tipo ? [UI.tipo] : ['compra', 'venta'];
+    const board = tipo => {
+      const cols = D.STAGES[tipo];
+      let ls = S.leads.filter(l => l.tipo === tipo && l.stage !== 'perdido' && (l.stage !== 'ganado' || inLast(60, stageAt(l))));
+      if (f.agent) ls = ls.filter(l => l.agent === f.agent);
+      const stuck = tipo === 'compra' ? [0.25, 3, 5, 5, 5, 10, 999] : [0.25, 4, 5, 7, 60, 999];
+      return '<section class="tblock ' + tipo + '"><div class="tblock-head"><div><span class="tipo ' + tipo + '">' + (tipo === 'venta' ? 'Venta' : 'Compra') + '</span><h2>' + (tipo === 'venta' ? 'Captación de propietarios' : 'Pipeline de compra') + '</h2><p>' + ls.length + ' leads abiertos' + (tipo === 'venta' ? ' · de la solicitud a la venta' : ' · del primer contacto a la firma') + '</p></div>' + (UI.tipo ? '' : '<button class="btn sm" data-settipo="' + tipo + '">Ver solo ' + tipo + ' →</button>') + '</div>' +
+        '<div class="board">' + cols.map((c, ci) => {
+          const items = ls.filter(l => l.stage === c.id).sort((a, b) => b.score - a.score);
+          return '<div class="col" data-stage="' + c.id + '" data-tipo="' + tipo + '"><div class="col-head"><b>' + c.label + '</b><span>' + items.length + '</span></div>' +
+            items.slice(0, UI.tipo ? 25 : 6).map(l => {
+              const d = (t - stageAt(l)) / DAY;
+              const cls = c.id === 'ganado' ? '' : d > stuck[ci] * 2 ? 'crit' : d > stuck[ci] ? 'warn' : '';
+              return '<div class="kcard" draggable="true" data-lead="' + l.id + '"><div class="row"><span class="name">' + esc(l.name) + '</span><span class="age ' + cls + '">' + dur(t - stageAt(l)) + '</span></div>' +
+                '<div class="meta">' + whatLine(l) + '</div><div class="row">' + keyFact(l) + av(l.agent, 'xs') + '</div></div>';
+            }).join('') + (items.length > (UI.tipo ? 25 : 6) ? '<div class="col-more">+ ' + (items.length - (UI.tipo ? 25 : 6)) + ' más</div>' : '') + (items.length ? '' : '<div class="col-empty">Sin leads</div>') + '</div>';
+        }).join('') + '</div></section>';
+    };
+    return '<div class="toolbar"><select id="pf-agent" aria-label="Asesor">' + opt('', 'Todos los asesores', f.agent) + S.agents.map(a => opt(a.id, agentName(a.id), f.agent)).join('') + '</select>' +
+      '<span class="muted small push hide-sm">Arrastra una tarjeta para cambiar de etapa</span></div>' + tipos.map(board).join('');
   };
   AFTER.pipeline = function () {
-    $$('#pf-tipo button').forEach(b => b.addEventListener('click', () => { UI.pipe.tipo = b.dataset.v; render(); }));
     $('#pf-agent').addEventListener('change', e => { UI.pipe.agent = e.target.value; render(); });
     let dragId = null;
     $$('.kcard').forEach(c => {
@@ -414,7 +444,7 @@
     $$('.col').forEach(col => {
       col.addEventListener('dragover', e => { e.preventDefault(); col.classList.add('drop'); });
       col.addEventListener('dragleave', () => col.classList.remove('drop'));
-      col.addEventListener('drop', e => { e.preventDefault(); col.classList.remove('drop'); if (dragId) { setStage(lead(dragId), col.dataset.stage); dragId = null; } });
+      col.addEventListener('drop', e => { e.preventDefault(); col.classList.remove('drop'); const l = dragId && lead(dragId); if (l && l.tipo === col.dataset.tipo) setStage(l, col.dataset.stage); else if (l) toast('No se puede mover ahí', 'Un lead de ' + l.tipo + ' solo se mueve en su propio tablero'); dragId = null; });
     });
   };
 
@@ -505,14 +535,14 @@
     const tab = UI.rep.tab;
     let body = '';
     if (tab === 'campanas') {
-      const rows = S.campaigns.map(c => Object.assign({ c }, campStats(c)));
+      const rows = S.campaigns.filter(c => !UI.tipo || (UI.tipo === 'venta') === !!c.sellers).map(c => Object.assign({ c }, campStats(c)));
       const spend = rows.reduce((s, r) => s + r.c.spend, 0), leads = rows.reduce((s, r) => s + r.leads, 0), comm = rows.reduce((s, r) => s + r.comm, 0), won = rows.reduce((s, r) => s + r.won, 0);
       body = '<div class="kpis">' + kpi('Inversión', 'S/ ' + num(spend), 'Meta y TikTok') + kpi('Leads de campañas', leads, 'S/ ' + (spend / Math.max(1, leads)).toFixed(2) + ' por lead') + kpi('Cierres atribuidos', won, 'Compras y ventas') + kpi('Retorno', (comm / Math.max(1, spend)).toFixed(1) + '<small>x</small>', 'Comisión S/ ' + num(comm)) + '</div>' +
         '<section class="card"><div class="card-head"><h2>Por campaña</h2><span class="hint">Clic para ver detalle</span></div><div class="table-wrap"><table class="t"><thead><tr><th>Campaña</th><th class="r">Inversión</th><th class="r">Leads</th><th class="r">Costo/lead</th><th class="r">Visitas o tasaciones</th><th class="r">Cierres</th></tr></thead><tbody>' +
         rows.map(r => '<tr class="click" data-camp="' + r.c.id + '"><td><div class="cell-main">' + esc(r.c.name) + '</div><div class="cell-sub">' + platformLabel(r.c.platform) + ' · ' + (r.c.sellers ? 'propietarios que venden' : 'compradores') + (r.c.status !== 'Activa' ? ' · pausada' : '') + '</div></td><td class="r num">S/ ' + num(r.c.spend) + '</td><td class="r num">' + r.leads + '</td><td class="r num">S/ ' + (r.c.spend / Math.max(1, r.leads)).toFixed(2) + '</td><td class="r num">' + r.visits + '</td><td class="r num">' + r.won + '</td></tr>').join('') +
         '</tbody></table></div></section>';
     } else if (tab === 'embudo') {
-      const tipo = UI.rep.tipo;
+      const tipo = UI.tipo || UI.rep.tipo;
       const ls = S.leads.filter(l => l.tipo === tipo && inLast(60, l.created));
       const steps = funnelData(ls, tipo);
       const lost = ls.filter(l => l.stage === 'perdido');
@@ -521,7 +551,7 @@
       const splitRows = tipo === 'compra'
         ? D.PAGO.map(p => { const g = ls.filter(l => l.pago === p); return { name: p, v: pct(g.filter(l => reached(l) >= 3).length, g.length), label: pct(g.filter(l => reached(l) >= 3).length, g.length) + '% llegó a visita · ' + g.length + ' leads' }; })
         : [true, false].map(b => { const g = ls.filter(l => !!l.aNombre === b); return { name: b ? 'A su nombre' : 'No a su nombre', v: pct(g.filter(l => reached(l) >= 3).length, g.length), label: pct(g.filter(l => reached(l) >= 3).length, g.length) + '% firmó exclusiva · ' + g.length + ' leads' }; });
-      body = '<div class="toolbar">' + segBtns('rt-tipo', [['compra', 'Compra'], ['venta', 'Venta']], tipo) + '<span class="muted small">' + ls.length + ' leads · últimos 60 días</span></div>' +
+      body = '<div class="toolbar">' + (UI.tipo ? '' : segBtns('rt-tipo', [['compra', 'Compra'], ['venta', 'Venta']], tipo)) + '<span class="muted small">' + ls.length + ' leads · últimos 60 días</span></div>' +
         '<section class="card"><div class="card-head"><h2>Dónde se pierden</h2><span class="hint">Leads por etapa y motivo principal de pérdida</span></div>' + funnelHTML(steps) + '</section>' +
         '<div class="grid g2"><section class="card"><div class="card-head"><h2>' + (tipo === 'compra' ? 'Según forma de pago' : 'Según si está a su nombre') + '</h2></div>' + hbars(splitRows) + '</section>' +
         '<section class="card"><div class="card-head"><h2>Motivos de pérdida</h2><span class="hint">' + lost.length + ' perdidos</span></div>' + hbars(Object.entries(reasons).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([n, v]) => ({ name: n, v, label: v + ' · ' + pct(v, lost.length) + '%' })), 'crit') + '</section></div>';
@@ -799,6 +829,8 @@
   }
 
   document.addEventListener('click', e => {
+    const st = e.target.closest('[data-settipo]');
+    if (st) { setTipo(st.dataset.settipo); $('#view').scrollTop = 0; return; }
     const a = e.target.closest('[data-act]');
     if (a && a.tagName !== 'SELECT') {
       const act = a.dataset.act;
