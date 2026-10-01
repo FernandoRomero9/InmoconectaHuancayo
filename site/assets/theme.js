@@ -14,7 +14,7 @@
     var btns = document.querySelectorAll('[data-theme-toggle]');
     for (var i = 0; i < btns.length; i++) {
       btns[i].setAttribute('aria-checked', t === 'dark' ? 'true' : 'false');
-      btns[i].setAttribute('title', t === 'dark' ? 'Cambiar a modo perla' : 'Cambiar a modo noche');
+      btns[i].setAttribute('title', t === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
     }
   }
   function current() { return root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'; }
