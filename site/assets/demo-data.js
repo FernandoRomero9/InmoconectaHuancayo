@@ -76,7 +76,7 @@
     ]
   };
   const LOSS_REASONS = {
-    compra: ['No responde', 'Datos falsos o duplicado', 'Solo estaba averiguando', 'Precio fuera de presupuesto', 'No califica a crédito', 'Ubicación no le convence', 'La propiedad no le convenció', 'Compró con otra inmobiliaria', 'No hubo acuerdo en precio', 'Crédito denegado por el banco', 'Desistió de la compra'],
+    compra: ['No responde', 'Datos falsos o duplicado', 'La propiedad ya se vendió', 'Solo estaba averiguando', 'Precio fuera de presupuesto', 'No califica a crédito', 'Ubicación no le convence', 'La propiedad no le convenció', 'Compró con otra inmobiliaria', 'No hubo acuerdo en precio', 'Crédito denegado por el banco', 'Desistió de la compra'],
     venta: ['No responde', 'Datos falsos o duplicado', 'Solo quería saber cuánto vale', 'Ya no quiere vender', 'No está a su nombre y no puede sanear', 'Precio esperado fuera de mercado', 'Firmó con otra inmobiliaria', 'No acepta exclusividad', 'Desistió de vender', 'Retiró la propiedad del mercado']
   };
 
@@ -90,9 +90,9 @@
   ];
 
   // Elige el asesor cuyo perfil encaja mejor con el lead
-  function recommend(l, agents) {
+  function recommend(l, agents, loads) {
     const pool = agents.filter(a => a.rr);
-    const load = id => (l._load && l._load[id]) || 0;
+    const load = id => (loads && loads[id]) || 0;
     const scored = pool.map(a => {
       let s = 0;
       const m = a.match || {};
@@ -126,20 +126,34 @@
     { id: 'INC-101', type: 'Departamento', op: 'Venta', district: 'Huancayo', address: 'Urb. San Carlos, Jr. Los Pinos', cur: 'US$', price: 118000, priceHist: [132000, 125000], area: 112, beds: 3, baths: 2, parking: 1, owner: 'o1', listed: 124, status: 'Disponible', exclusive: true, commission: 3, campaigns: ['c1'], hue: 190 },
     { id: 'INC-102', type: 'Casa', op: 'Venta', district: 'El Tambo', address: 'Av. Mariscal Castilla, cdra. 24', cur: 'US$', price: 165000, priceHist: [], area: 210, land: 180, beds: 4, baths: 3, parking: 2, owner: 'o2', listed: 45, status: 'Disponible', exclusive: true, commission: 3, campaigns: ['c2'], hue: 28 },
     { id: 'INC-103', type: 'Terreno', op: 'Venta', district: 'Pilcomayo', address: 'Sector La Punta, a 5 min de la Av. Huancavelica', cur: 'US$', price: 28000, priceHist: [], area: 200, owner: 'o3', listed: 78, status: 'Disponible', exclusive: true, commission: 4, campaigns: ['c4'], hue: 95 },
-    { id: 'INC-104', type: 'Local comercial', op: 'Alquiler', district: 'Huancayo', address: 'Jr. Cusco 560, Centro', cur: 'S/', price: 3800, priceHist: [], area: 85, baths: 1, owner: 'o5', listed: 33, status: 'Disponible', exclusive: false, commission: 100, commissionNote: '1 mes de renta', campaigns: ['c8'], hue: 250 },
+    { id: 'INC-104', type: 'Local comercial', op: 'Venta', district: 'Huancayo', address: 'Jr. Cusco 560, Centro', cur: 'US$', price: 185000, priceHist: [], area: 85, baths: 1, owner: 'o5', listed: 33, status: 'Disponible', exclusive: false, commission: 3, campaigns: ['c8'], hue: 250 },
     { id: 'INC-105', type: 'Departamento', op: 'Venta', district: 'Huancayo', address: 'Av. Ferrocarril 1450 · Estreno', cur: 'US$', price: 79000, priceHist: [], area: 74, beds: 2, baths: 2, parking: 0, owner: 'o8', listed: 18, status: 'Disponible', exclusive: true, commission: 3, campaigns: ['c7'], hue: 205 },
     { id: 'INC-106', type: 'Casa', op: 'Venta', district: 'Huancayo', address: 'Palián, Pje. Los Eucaliptos', cur: 'US$', price: 142000, priceHist: [155000], area: 190, land: 240, beds: 4, baths: 3, parking: 2, owner: 'o6', listed: 212, status: 'Disponible', exclusive: true, commission: 3, campaigns: ['c3'], hue: 12 },
     { id: 'INC-107', type: 'Departamento', op: 'Venta', district: 'El Tambo', address: 'Jr. Parra del Riego 780', cur: 'US$', price: 95000, priceHist: [], area: 96, beds: 3, baths: 2, parking: 1, owner: 'o4', listed: 57, status: 'Disponible', exclusive: false, commission: 3, campaigns: ['c1'], hue: 175 },
     { id: 'INC-108', type: 'Terreno', op: 'Venta', district: 'San Agustín de Cajas', address: 'Camino a Hualhuas · campestre', cur: 'US$', price: 60000, priceHist: [68000], area: 1000, owner: 'o5', listed: 160, status: 'Disponible', exclusive: true, commission: 4, campaigns: ['c5'], hue: 80 },
-    { id: 'INC-109', type: 'Oficina', op: 'Alquiler', district: 'Huancayo', address: 'Calle Real 890, piso 4', cur: 'S/', price: 2200, priceHist: [], area: 60, baths: 1, owner: 'o3', listed: 26, status: 'Disponible', exclusive: false, commission: 100, commissionNote: '1 mes de renta', campaigns: ['c8'], hue: 230 },
+    { id: 'INC-109', type: 'Oficina', op: 'Venta', district: 'Huancayo', address: 'Calle Real 890, piso 4', cur: 'US$', price: 68000, priceHist: [], area: 60, baths: 1, owner: 'o3', listed: 26, status: 'Disponible', exclusive: false, commission: 3, campaigns: ['c8'], hue: 230 },
     { id: 'INC-110', type: 'Casa de campo', op: 'Venta', district: 'Concepción', address: 'Anexo Santa Rosa de Ocopa', cur: 'US$', price: 110000, priceHist: [], area: 160, land: 1500, beds: 3, baths: 2, parking: 3, owner: 'o7', listed: 38, status: 'Disponible', exclusive: true, commission: 3, campaigns: ['c5'], hue: 60 },
     { id: 'INC-111', type: 'Departamento', op: 'Venta', district: 'Huancayo', address: 'Urb. San Carlos, Av. Centenario · Dúplex', cur: 'US$', price: 155000, priceHist: [], area: 145, beds: 3, baths: 3, parking: 2, owner: 'o2', listed: 72, status: 'Vendida', soldDaysAgo: 19, exclusive: true, commission: 3, campaigns: ['c1'], hue: 200 },
     { id: 'INC-112', type: 'Terreno', op: 'Venta', district: 'Chupaca', address: 'Proyecto Mirador de Huamancaca · 42 lotes', cur: 'US$', price: 14500, priceHist: [], area: 120, owner: 'o8', listed: 96, status: 'Disponible', exclusive: true, commission: 5, campaigns: ['c4'], hue: 110, units: 42, unitsSold: 17 },
     { id: 'INC-113', type: 'Casa', op: 'Venta', district: 'Chilca', address: 'Av. 9 de Diciembre, cdra. 7', cur: 'US$', price: 88000, priceHist: [], area: 150, land: 120, beds: 3, baths: 2, parking: 1, owner: 'o9', listed: 20, status: 'Reservada', exclusive: true, commission: 3, campaigns: ['c7'], hue: 20 },
     { id: 'INC-114', type: 'Departamento', op: 'Venta', district: 'El Tambo', address: 'Av. Huancavelica 3120', cur: 'US$', price: 102000, priceHist: [], area: 104, beds: 3, baths: 2, parking: 1, owner: 'o10', listed: 67, status: 'Disponible', exclusive: true, commission: 3, campaigns: ['c2'], hue: 185 },
     { id: 'INC-115', type: 'Casa', op: 'Venta', district: 'Huancán', address: 'Jr. Arequipa 215', cur: 'US$', price: 72000, priceHist: [], area: 130, land: 160, beds: 3, baths: 2, parking: 1, owner: 'o11', listed: 0, status: 'En captación', exclusive: false, commission: 3, campaigns: [], hue: 35 },
-    { id: 'INC-116', type: 'Local comercial', op: 'Alquiler', district: 'Huancayo', address: 'Av. Giráldez 420', cur: 'S/', price: 5500, priceHist: [6000], area: 140, baths: 2, owner: 'o1', listed: 104, status: 'Disponible', exclusive: false, commission: 100, commissionNote: '1 mes de renta', campaigns: ['c8'], hue: 260 }
+    { id: 'INC-116', type: 'Local comercial', op: 'Venta', district: 'Huancayo', address: 'Av. Giráldez 420', cur: 'US$', price: 260000, priceHist: [275000], area: 140, baths: 2, owner: 'o1', listed: 104, status: 'Disponible', exclusive: false, commission: 3, campaigns: ['c8'], hue: 260 }
   ];
+
+  // Propiedades ya vendidas en los últimos meses (historial del stock)
+  const SOLD = [
+    { id: 'INC-090', type: 'Departamento', district: 'El Tambo', address: 'Jr. Julio Sumar 345', price: 89000, area: 90, beds: 3, baths: 2, owner: 'o4', hue: 180 },
+    { id: 'INC-091', type: 'Casa', district: 'Huancayo', address: 'Urb. Huancayo, Jr. Las Retamas', price: 132000, area: 180, beds: 4, baths: 3, owner: 'o6', hue: 25 },
+    { id: 'INC-092', type: 'Departamento', district: 'Huancayo', address: 'Av. Giráldez 1020', price: 76000, area: 70, beds: 2, baths: 2, owner: 'o8', hue: 200 },
+    { id: 'INC-093', type: 'Terreno', district: 'Pilcomayo', address: 'Sector La Punta, lote 14', price: 26000, area: 180, owner: 'o3', hue: 100 },
+    { id: 'INC-094', type: 'Casa', district: 'Chilca', address: 'Jr. Los Andes 512', price: 84000, area: 140, beds: 3, baths: 2, owner: 'o9', hue: 15 },
+    { id: 'INC-095', type: 'Departamento', district: 'El Tambo', address: 'Av. Huancavelica 2780', price: 98000, area: 100, beds: 3, baths: 2, owner: 'o10', hue: 190 },
+    { id: 'INC-096', type: 'Local comercial', district: 'Huancayo', address: 'Jr. Puno 410', price: 150000, area: 95, baths: 1, owner: 'o5', hue: 255 },
+    { id: 'INC-097', type: 'Casa', district: 'El Tambo', address: 'Pje. Los Jazmines 88', price: 118000, area: 165, beds: 4, baths: 2, owner: 'o2', hue: 35 },
+    { id: 'INC-098', type: 'Terreno', district: 'San Agustín de Cajas', address: 'Camino a Hualhuas, lote 3', price: 42000, area: 600, owner: 'o7', hue: 85 },
+    { id: 'INC-099', type: 'Departamento', district: 'Huancayo', address: 'Urb. San Carlos, Jr. Las Begonias', price: 112000, area: 108, beds: 3, baths: 2, owner: 'o1', hue: 205 }
+  ].map(p => Object.assign({ op: 'Venta', cur: 'US$', priceHist: [], parking: 1, listed: 120, status: 'Vendida', soldDaysAgo: 40, exclusive: true, commission: 3, campaigns: [] }, p));
 
   const CAMPAIGNS = [
     { id: 'c1', name: 'Departamentos San Carlos', platform: 'meta', source: ['fb', 'ig'], objective: 'Lead Ads · Formulario instantáneo', form: 'Agenda tu visita — San Carlos', status: 'Activa', spend: 1450, days: 58, props: ['INC-101', 'INC-107', 'INC-111'] },
@@ -149,7 +163,7 @@
     { id: 'c5', name: 'Terrenos y casas de campo', platform: 'meta', source: ['fb'], objective: 'Lead Ads · Formulario instantáneo', form: 'Quiero mi casa de campo', status: 'Pausada', spend: 450, days: 35, props: ['INC-108', 'INC-110'] },
     { id: 'c6', name: 'Vende tu propiedad con nosotros', platform: 'meta', source: ['ig', 'fb'], objective: 'Lead Ads · Captación de propietarios', form: 'Tasación gratuita', status: 'Activa', spend: 500, days: 30, props: [], sellers: true },
     { id: 'c7', name: 'Estrena depa · Ferrocarril y Chilca', platform: 'tiktok', source: ['tt'], objective: 'TikTok Lead Gen · Spark Ads', form: 'Separa con US$ 500', status: 'Activa', spend: 550, days: 21, props: ['INC-105', 'INC-113'] },
-    { id: 'c8', name: 'Locales y oficinas en el centro', platform: 'meta', source: ['fb'], objective: 'Lead Ads · Formulario instantáneo', form: 'Busco local', status: 'Activa', spend: 350, days: 34, props: ['INC-104', 'INC-109', 'INC-116'] }
+    { id: 'c8', name: 'Locales y oficinas en venta · Centro', platform: 'meta', source: ['fb'], objective: 'Lead Ads · Formulario instantáneo', form: 'Quiero comprar un local', status: 'Activa', spend: 350, days: 34, props: ['INC-104', 'INC-109', 'INC-116'] }
   ];
 
   const FIRST = ['José', 'María', 'Luis', 'Rosa', 'Carlos', 'Ana', 'Jorge', 'Carmen', 'Miguel', 'Juana', 'Pedro', 'Elena', 'Raúl', 'Patricia', 'Víctor', 'Sandra', 'Julio', 'Gladys', 'Renzo', 'Milagros', 'Kevin', 'Yesenia', 'Edwin', 'Flor', 'Álvaro', 'Katherine', 'Hugo', 'Diana', 'César', 'Roxana', 'Frank', 'Maribel', 'Jhon', 'Liliana', 'Wilmer', 'Noemí', 'Brenda', 'Iván', 'Pamela', 'Ronald'];
@@ -167,6 +181,7 @@
   const pick = (r, arr) => arr[Math.floor(r() * arr.length)];
   const between = (r, a, b) => a + r() * (b - a);
   const propById = id => PROPERTIES.find(p => p.id === id);
+  const stageAtOf = l => l.history[l.history.length - 1].at;
   const fmtMoney = (cur, v) => cur + ' ' + Math.round(v).toLocaleString('en-US');
 
   function phone(r) {
@@ -380,6 +395,48 @@
     urgent.forEach(u => leads.push(makeLead(r, now, agents, Object.assign({ id: 'L-' + (1000 + n++), created: now - u.mins * MIN, unattended: true }, u))));
     leads.sort((a, b) => b.created - a.created);
 
+    // Coherencia con el stock: solo hay cierres en lotes (varias unidades) o en la propiedad vendida,
+    // y los interesados abiertos en una propiedad vendida se pierden.
+    const soldPool = SOLD.map(p => Object.assign({}, p));
+    leads.slice().sort((a, b) => stageAtOf(a) - stageAtOf(b)).forEach(l => {
+      if (l.tipo !== 'compra') return;
+      const p = propById(l.interest);
+      if (!p) return;
+      if (l.stage === 'ganado' && p.status !== 'Vendida' && !p.units) {
+        // El cierre fue de una propiedad que ya salió del stock como vendida
+        const i = soldPool.findIndex(x => x.type === p.type && !x._used);
+        const j = i >= 0 ? i : soldPool.findIndex(x => !x._used);
+        if (j >= 0) {
+          const sp = soldPool[j]; sp._used = true;
+          const winAt = stageAtOf(l);
+          sp.soldDaysAgo = Math.max(1, Math.round((now - winAt) / DAY));
+          sp.listed = sp.soldDaysAgo + 30 + Math.round(r() * 90);
+          const old = l.interest;
+          l.interest = sp.id; l.propTipo = sp.type; l.zona = sp.district; l.cur = 'US$';
+          l.events.forEach(e => { e.text = e.text.split(old).join(sp.id); });
+        } else {
+          l.history = l.history.filter(h => h.stage !== 'ganado');
+          l.events = l.events.filter(e => e.type !== 'win');
+          l.stage = 'separacion';
+          l.next = { at: now + between(r, 1, 4) * DAY, text: NEXT.compra.separacion };
+        }
+      }
+    });
+    leads.forEach(l => {
+      if (l.tipo !== 'compra') return;
+      const p = propById(l.interest) || soldPool.find(x => x.id === l.interest);
+      if (!p) return;
+      const sold = p.status === 'Vendida';
+      if (sold && l.stage !== 'ganado' && l.stage !== 'perdido') {
+        const at = Math.max(l.history[l.history.length - 1].at + HOUR, now - p.soldDaysAgo * DAY);
+        l.lostStage = l.stage; l.stage = 'perdido'; l.lossReason = 'La propiedad ya se vendió'; l.lostAt = at; l.next = null; l.visitAt = null;
+        l.history.push({ stage: 'perdido', at });
+        l.events.push({ at, type: 'lost', text: 'Marcado como perdido: la propiedad ya se vendió', by: l.agent });
+      }
+      if (l.stage !== 'perdido') l.score = scoreLead(l);
+    });
+    const allProps = PROPERTIES.concat(soldPool.filter(p => p._used));
+
     // Citas en los próximos días
     leads.forEach(l => {
       const cita = (l.tipo === 'compra' && l.stage === 'visita') || (l.tipo === 'venta' && l.stage === 'contactado');
@@ -396,7 +453,7 @@
       if (l.visitAt > now) { const d = new Date(l.visitAt); d.setMinutes(d.getMinutes() < 30 ? 0 : 30, 0, 0); if (d.getHours() < 9) d.setHours(10); if (d.getHours() > 18) d.setHours(17); l.visitAt = Math.max(d.getTime(), now + 30 * MIN); l.visitConfirmed = r() < 0.55; }
     });
 
-    const properties = PROPERTIES.map(p => Object.assign({}, p, {
+    const properties = allProps.map(p => Object.assign({}, p, {
       listedAt: now - p.listed * DAY,
       soldAt: p.soldDaysAgo ? now - p.soldDaysAgo * DAY : null,
       views: Math.round((p.listed + 10) * (p.campaigns.length ? 38 : 6) * (0.6 + r() * 0.8)),

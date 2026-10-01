@@ -14,7 +14,7 @@
   function load() {
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) { const s = JSON.parse(raw); if (s && s.version === 4 && Date.now() - s.builtAt < 10 * HOUR) return s; }
+      if (raw) { const s = JSON.parse(raw); if (s && s.version === 4 && Date.now() - s.builtAt < 24 * HOUR) return s; }
     } catch (e) { /* sin almacenamiento */ }
     return fresh();
   }
@@ -32,9 +32,9 @@
     lastTick: Date.now()
   };
   UI.tipo = '';
-  try { UI.live = localStorage.getItem(KEY + ':live') === '1'; UI.tipo = localStorage.getItem(KEY + ':tipo') || ''; } catch (e) { /* nada */ }
+  try { UI.live = localStorage.getItem(KEY + ':live') === '1'; const tv = localStorage.getItem(KEY + ':tipo'); UI.tipo = ['compra', 'venta'].includes(tv) ? tv : ''; } catch (e) { /* nada */ }
   // Filtro global Compra / Venta: se aplica a todas las pantallas de leads
-  const byTipo = ls => UI.tipo ? ls.filter(l => l.tipo === UI.tipo) : ls;
+  const byTipo = ls => UI.tipo ? ls.filter(l => l.tipo === UI.tipo) : ls.slice();
   function setTipo(t) {
     UI.tipo = t; UI.leads.pago = ''; UI.leads.titulo = ''; UI.leads.limit = 40;
     try { localStorage.setItem(KEY + ':tipo', t); } catch (e) { /* nada */ }
@@ -98,7 +98,8 @@
   const stageAt = l => l.history[l.history.length - 1].at;
   function reached(l) { let m = 0; l.history.forEach(h => { const i = sIdx(l, h.stage); if (h.stage !== 'perdido' && i > m) m = i; }); return m; }
   const group = src => D.SOURCES[src].group;
-  const rec = l => D.recommend(l, S.agents);
+  const loads = () => { const m = {}; S.leads.forEach(x => { if (isOpen(x)) m[x.agent] = (m[x.agent] || 0) + 1; }); return m; };
+  const rec = (l, agents) => D.recommend(l, agents || S.agents, loads());
   const responseMins = l => l.firstResponse ? (l.firstResponse - l.created) / MIN : null;
   function commission(l) {
     if (l.tipo === 'venta') return l.precio * 0.03 * FX;
@@ -172,7 +173,7 @@
   function route() {
     let h = (location.hash || '').replace('#', '');
     if (ALIAS[h]) {
-      ({ urgentes: () => { UI.seg = 'sin'; }, agenda: () => { UI.seg = 'citas'; }, captacion: () => { UI.pipe.tipo = 'venta'; }, campanas: () => { UI.rep.tab = 'campanas'; }, trazabilidad: () => { UI.rep.tab = 'embudo'; }, equipo: () => { UI.aj.tab = 'asesores'; }, automatizaciones: () => { UI.aj.tab = 'auto'; }, integraciones: () => { UI.aj.tab = 'integ'; } }[h] || (() => {}))();
+      ({ urgentes: () => { UI.seg = 'sin'; }, agenda: () => { UI.seg = 'citas'; }, captacion: () => { UI.tipo = 'venta'; }, campanas: () => { UI.rep.tab = 'campanas'; }, trazabilidad: () => { UI.rep.tab = 'embudo'; }, equipo: () => { UI.aj.tab = 'asesores'; }, automatizaciones: () => { UI.aj.tab = 'auto'; }, integraciones: () => { UI.aj.tab = 'integ'; } }[h] || (() => {}))();
       h = ALIAS[h];
       try { history.replaceState(null, '', '#' + h); } catch (e) { /* nada */ }
     }
@@ -225,6 +226,7 @@
     renderTipoBar(r);
     $('#view').innerHTML = '<div class="view-inner">' + VIEWS[r]() + '</div>';
     if (AFTER[r]) AFTER[r]();
+    $$('.tabs .on, .tipo-switch .on').forEach(b => { try { b.scrollIntoView({ inline: 'nearest', block: 'nearest' }); } catch (e) { /* nada */ } });
     tickTimers();
   }
   const TIPO_ROUTES = ['inicio', 'seguimiento', 'leads', 'pipeline', 'reportes'];
@@ -304,7 +306,7 @@
     const wins = byTipo(S.leads).filter(l => l.stage === 'ganado' && inLast(30, stageAt(l)));
     const attention = g.sin.map(l => followRow(l, 'sin')).concat(g.vencidos.slice(0, 3).map(l => followRow(l, 'next'))).slice(0, 6).join('');
     const citasHoy = g.citas.filter(l => isToday(l.visitAt));
-    const l30 = S.leads.filter(l => inLast(30, l.created));
+    const l30 = byTipo(S.leads).filter(l => inLast(30, l.created));
     return '<div class="kpis">' +
       kpi('Sin atender ahora', g.sin.length, g.sin.length ? 'El más antiguo espera ' + dur(oldest) : 'Todo al día', g.sin.length ? 'alert' : '', 'seguimiento') +
       kpi('Seguimientos vencidos', g.vencidos.length, g.hoy.length + ' programados para hoy', g.vencidos.length ? 'warn' : '', 'seguimiento') +
@@ -419,7 +421,7 @@
       let ls = S.leads.filter(l => l.tipo === tipo && l.stage !== 'perdido' && (l.stage !== 'ganado' || inLast(60, stageAt(l))));
       if (f.agent) ls = ls.filter(l => l.agent === f.agent);
       const stuck = tipo === 'compra' ? [0.25, 3, 5, 5, 5, 10, 999] : [0.25, 4, 5, 7, 60, 999];
-      return '<section class="tblock ' + tipo + '"><div class="tblock-head"><div><span class="tipo ' + tipo + '">' + (tipo === 'venta' ? 'Venta' : 'Compra') + '</span><h2>' + (tipo === 'venta' ? 'Captación de propietarios' : 'Pipeline de compra') + '</h2><p>' + ls.length + ' leads abiertos' + (tipo === 'venta' ? ' · de la solicitud a la venta' : ' · del primer contacto a la firma') + '</p></div>' + (UI.tipo ? '' : '<button class="btn sm" data-settipo="' + tipo + '">Ver solo ' + tipo + ' →</button>') + '</div>' +
+      return '<section class="tblock ' + tipo + '"><div class="tblock-head"><div><span class="tipo ' + tipo + '">' + (tipo === 'venta' ? 'Venta' : 'Compra') + '</span><h2>' + (tipo === 'venta' ? 'Captación de propietarios' : 'Pipeline de compra') + '</h2><p>' + ls.filter(isOpen).length + ' leads abiertos' + (tipo === 'venta' ? ' · de la solicitud a la venta' : ' · del primer contacto a la firma') + '</p></div>' + (UI.tipo ? '' : '<button class="btn sm" data-settipo="' + tipo + '">Ver solo ' + tipo + ' →</button>') + '</div>' +
         '<div class="board">' + cols.map((c, ci) => {
           const items = ls.filter(l => l.stage === c.id).sort((a, b) => b.score - a.score);
           return '<div class="col" data-stage="' + c.id + '" data-tipo="' + tipo + '"><div class="col-head"><b>' + c.label + '</b><span>' + items.length + '</span></div>' +
@@ -509,7 +511,7 @@
       const m = reached(l);
       for (let i = 0; i <= m; i++) steps[i].count++;
       if (l.stage === 'perdido') { const st = steps[sIdx(l, l.lostStage)]; if (st) { st.lost++; st.reasons[l.lossReason] = (st.reasons[l.lossReason] || 0) + 1; } }
-      for (let k = 0; k < l.history.length - 1; k++) { const i = sIdx(l, l.history[k].stage); if (i >= 0) steps[i].times.push(l.history[k + 1].at - l.history[k].at); }
+      for (let k = 0; k < l.history.length - 1; k++) { const i = sIdx(l, l.history[k].stage); if (i >= 0 && l.history[k + 1].stage !== 'perdido') steps[i].times.push(l.history[k + 1].at - l.history[k].at); }
     });
     return steps;
   }
@@ -557,9 +559,10 @@
         '<section class="card"><div class="card-head"><h2>Motivos de pérdida</h2><span class="hint">' + lost.length + ' perdidos</span></div>' + hbars(Object.entries(reasons).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([n, v]) => ({ name: n, v, label: v + ' · ' + pct(v, lost.length) + '%' })), 'crit') + '</section></div>';
     } else {
       const rows = S.agents.map(a => {
-        const ls = S.leads.filter(l => l.agent === a.id && inLast(30, l.created));
+        const base = byTipo(S.leads).filter(l => l.agent === a.id);
+        const ls = base.filter(l => inLast(30, l.created));
         const r = ls.map(responseMins).filter(v => v != null);
-        return { a, n: ls.length, c: ls.filter(l => l.tipo === 'compra').length, v: ls.filter(l => l.tipo === 'venta').length, med: median(r), open: S.leads.filter(l => l.agent === a.id && isOpen(l)).length, won: S.leads.filter(l => l.agent === a.id && l.stage === 'ganado' && inLast(60, stageAt(l))).length };
+        return { a, n: ls.length, c: ls.filter(l => l.tipo === 'compra').length, v: ls.filter(l => l.tipo === 'venta').length, med: median(r), open: base.filter(isOpen).length, won: base.filter(l => l.stage === 'ganado' && inLast(60, stageAt(l))).length };
       });
       body = '<section class="card"><div class="table-wrap"><table class="t"><thead><tr><th>Asesor</th><th class="r">Leads 30 d</th><th class="r">Compra / venta</th><th class="r">Abiertos</th><th class="r">1ª respuesta</th><th class="r">Cierres 60 d</th></tr></thead><tbody>' +
         rows.map(r => '<tr><td><div class="who">' + av(r.a.id) + '<div><div class="cell-main">' + esc(agentName(r.a.id)) + '</div><div class="cell-sub">' + esc(r.a.perfil) + '</div></div></div></td><td class="r num">' + r.n + '</td><td class="r num">' + r.c + ' / ' + r.v + '</td><td class="r num">' + r.open + '</td><td class="r"><span class="wait ' + sev(r.med) + '">' + (r.n ? dur(r.med * MIN) : '—') + '</span></td><td class="r num">' + r.won + '</td></tr>').join('') +
@@ -620,6 +623,7 @@
     $('#scrim').hidden = false;
     requestAnimationFrame(() => { $('#scrim').classList.add('show'); d.classList.add('show'); });
     d.setAttribute('aria-hidden', 'false');
+    document.documentElement.classList.add('drawer-open');
     tickTimers();
   }
   function closeDrawer() {
@@ -627,6 +631,7 @@
     const d = $('#drawer');
     d.classList.remove('show'); $('#scrim').classList.remove('show');
     d.setAttribute('aria-hidden', 'true');
+    document.documentElement.classList.remove('drawer-open');
     setTimeout(() => { if (!UI.drawer) { $('#scrim').hidden = true; d.innerHTML = ''; } }, 250);
   }
   const closeBtn = '<button class="btn ghost sm close" data-act="close" aria-label="Cerrar">' + ic('close') + '</button>';
@@ -653,7 +658,7 @@
     const panels = {
       derivar: '<div class="inline-form"><div class="field"><label for="dv-agent">Derivar a</label><select id="dv-agent">' + S.agents.map(a => opt(a.id, agentName(a.id) + ' · ' + a.perfil + (a.id === recA.agent.id ? ' (recomendado)' : '') + (a.rr && !a.onDuty ? ' · fuera de turno' : ''), recA.agent.id)).join('') + '</select></div><div class="row-flex"><button class="btn primary sm" data-act="derivar-save" data-id="' + l.id + '">Derivar</button><button class="btn ghost sm" data-act="panel" data-p="" data-id="' + l.id + '">Cancelar</button></div></div>',
       wa: '<div class="inline-form"><div class="wa-preview" id="wa-text">' + esc(l.tipo === 'venta' ? 'Hola ' + l.name.split(' ')[0] + ', soy ' + cur.name + ' de Inmoconecta. Gracias por pensar en nosotros para vender tu ' + l.propTipo.toLowerCase() + ' en ' + l.zona + '. ¿Qué día te queda bien para la tasación gratuita?' + (l.aNombre ? '' : ' Si la propiedad no está a tu nombre, te ayudamos con los documentos.') : 'Hola ' + l.name.split(' ')[0] + ', soy ' + cur.name + ' de Inmoconecta. Vi que te interesa ' + (p ? 'el inmueble ' + p.id + ' en ' + p.district : 'un ' + l.propTipo.toLowerCase() + ' en ' + l.zona) + '. ¿Te llamo ahora o prefieres agendar una visita?') + '</div><div class="row-flex"><button class="btn primary sm" data-act="wa-send" data-id="' + l.id + '">Registrar envío</button><button class="btn ghost sm" data-act="panel" data-p="" data-id="' + l.id + '">Cancelar</button></div></div>',
-      cita: '<div class="inline-form"><div class="form-row"><div class="field"><label for="v-date">' + (l.tipo === 'venta' ? 'Fecha de tasación' : 'Fecha de visita') + '</label><input type="datetime-local" id="v-date" value="' + localInput(t + DAY) + '"></div>' + (l.tipo === 'compra' ? '<div class="field"><label for="v-prop">Propiedad</label><select id="v-prop">' + S.properties.filter(x => x.status !== 'Vendida').map(x => opt(x.id, x.id + ' · ' + x.type + ' · ' + x.district, l.interest)).join('') + '</select></div>' : '') + '</div><div class="row-flex"><button class="btn primary sm" data-act="cita-save" data-id="' + l.id + '">Agendar</button><button class="btn ghost sm" data-act="panel" data-p="" data-id="' + l.id + '">Cancelar</button></div></div>',
+      cita: '<div class="inline-form"><div class="form-row"><div class="field"><label for="v-date">' + (l.tipo === 'venta' ? 'Fecha de tasación' : 'Fecha de visita') + '</label><input type="datetime-local" id="v-date" value="' + localInput(t + DAY) + '"></div>' + (l.tipo === 'compra' ? '<div class="field"><label for="v-prop">Propiedad</label><select id="v-prop">' + S.properties.filter(x => x.status !== 'Vendida' || x.id === l.interest).map(x => opt(x.id, x.id + ' · ' + x.type + ' · ' + x.district, l.interest)).join('') + '</select></div>' : '') + '</div><div class="row-flex"><button class="btn primary sm" data-act="cita-save" data-id="' + l.id + '">Agendar</button><button class="btn ghost sm" data-act="panel" data-p="" data-id="' + l.id + '">Cancelar</button></div></div>',
       next: '<div class="inline-form"><div class="form-row"><div class="field"><label for="n-date">Próximo seguimiento</label><input type="datetime-local" id="n-date" value="' + localInput(t + DAY) + '"></div><div class="field"><label for="n-text">Qué hacer</label><input id="n-text" value="' + esc((l.next && l.next.text) || D.NEXT[l.tipo][l.stage] || 'Llamar') + '"></div></div><div class="row-flex"><button class="btn primary sm" data-act="next-save" data-id="' + l.id + '">Guardar</button><button class="btn ghost sm" data-act="panel" data-p="" data-id="' + l.id + '">Cancelar</button></div></div>',
       lost: '<div class="inline-form"><div class="field"><label for="lost-r">Motivo</label><select id="lost-r">' + D.LOSS_REASONS[l.tipo].map(x => opt(x, x, '')).join('') + '</select></div><div class="row-flex"><button class="btn sm danger" data-act="lost-save" data-id="' + l.id + '">Marcar como perdido</button><button class="btn ghost sm" data-act="panel" data-p="" data-id="' + l.id + '">Cancelar</button></div></div>',
       note: '<div class="inline-form"><div class="field"><label for="note-t">Nota</label><textarea id="note-t" rows="3" placeholder="Ej.: prefiere que lo llamen después de las 6 p. m."></textarea></div><div class="row-flex"><button class="btn primary sm" data-act="note-save" data-id="' + l.id + '">Guardar nota</button><button class="btn ghost sm" data-act="panel" data-p="" data-id="' + l.id + '">Cancelar</button></div></div>'
@@ -668,11 +673,11 @@
         (l.aNombre ? '<div><dt>Motivo de venta</dt><dd>' + esc(l.motivo) + '</dd></div>' : '<div><dt>Situación</dt><dd><select id="ed-detalle" aria-label="Situación del título">' + D.NO_A_NOMBRE.map(x => opt(x, x, l.tituloDetalle)).join('') + '</select></dd></div>') + '</dl>' +
         (l.aNombre ? '' : '<div class="insight gold">' + ic('bulb') + '<div>No está a su nombre: se envía la lista de documentos para sanear el título y se crea una tarea de revisión legal antes de firmar la exclusiva.</div></div>');
     const nextHTML = l.next && isOpen(l) ? '<div class="next-box ' + (l.next.at < t ? 'over' : '') + '">' + ic('clock') + '<div><b>' + esc(l.next.text) + '</b><small>' + (l.next.at < t ? 'Vencido hace ' + dur(t - l.next.at) : whenLabel(l.next.at)) + '</small></div><button class="btn sm" data-act="done" data-id="' + l.id + '">Hecho</button></div>' : '';
-    const html = '<div class="dr-head"><div class="top-row"><div class="min0"><div class="eyebrow">' + l.id + ' · ' + esc(D.SOURCES[l.src].short) + ' · ' + ago(l.created) + '</div><h2 id="dr-title">' + esc(l.name) + '</h2><div class="row-flex small"><span class="mono">' + esc(l.phone) + '</span>' + tipoTag(l) + keyFact(l) + (unattended(l) ? '<span class="fact crit">Sin atender · <span data-since="' + l.created + '">' + timer(t - l.created) + '</span></span>' : '') + '</div></div>' + closeBtn + '</div>' +
-      '<div class="dr-actions"><button class="btn sm primary" data-act="call" data-id="' + l.id + '">' + ic('call') + 'Llamé</button><button class="btn sm" data-act="panel" data-p="wa" data-id="' + l.id + '">' + ic('wa') + 'WhatsApp</button><button class="btn sm" data-act="panel" data-p="cita" data-id="' + l.id + '">' + ic('visit') + (l.tipo === 'venta' ? 'Tasación' : 'Visita') + '</button><button class="btn sm" data-act="panel" data-p="next" data-id="' + l.id + '">' + ic('clock') + 'Seguimiento</button><button class="btn sm" data-act="panel" data-p="derivar" data-id="' + l.id + '">' + ic('route') + 'Derivar</button>' +
+    const html = '<div class="dr-head"><div class="top-row"><div class="min0"><div class="eyebrow">' + l.id + ' · ' + esc(D.SOURCES[l.src].short) + ' · ' + ago(l.created) + '</div><h2 id="dr-title">' + esc(l.name) + '</h2><div class="row-flex small"><span class="mono">' + esc(l.phone) + '</span>' + tipoTag(l) + keyFact(l) + (unattended(l) ? '<span class="fact crit">Sin atender&nbsp;·&nbsp;<span data-since="' + l.created + '">' + timer(t - l.created) + '</span></span>' : '') + '</div></div>' + closeBtn + '</div>' +
+      '<div class="dr-actions"><button class="btn sm primary" data-act="call" data-id="' + l.id + '">' + ic('call') + 'Llamé</button><button class="btn sm" data-act="panel" data-p="wa" data-id="' + l.id + '">' + ic('wa') + 'WhatsApp</button>' + (isOpen(l) ? '<button class="btn sm" data-act="panel" data-p="cita" data-id="' + l.id + '">' + ic('visit') + (l.tipo === 'venta' ? 'Tasación' : 'Visita') + '</button><button class="btn sm" data-act="panel" data-p="next" data-id="' + l.id + '">' + ic('clock') + 'Seguimiento</button><button class="btn sm" data-act="panel" data-p="derivar" data-id="' + l.id + '">' + ic('route') + 'Derivar</button>' : '<span class="small muted">Lead cerrado: cambia la etapa para reabrirlo.</span>') +
       '<details class="more-acts"><summary class="btn sm ghost">Más</summary><div><button class="btn sm" data-act="panel" data-p="note" data-id="' + l.id + '">' + ic('note') + 'Nota</button>' + (isOpen(l) ? '<button class="btn sm danger" data-act="panel" data-p="lost" data-id="' + l.id + '">Perdido</button>' : '') + '</div></details></div>' +
-      (UI.drawer.panel ? panels[UI.drawer.panel] : '') + '</div>' +
-      '<div class="dr-body">' +
+      '</div>' +
+      '<div class="dr-body">' + (UI.drawer.panel ? panels[UI.drawer.panel] : '') +
       nextHTML +
       '<div class="panel"><div class="panel-head"><h3>Etapa</h3><select id="dr-stage" aria-label="Etapa">' + st.map(s => opt(s.id, s.label, l.stage)).join('') + opt('perdido', 'Perdido', l.stage) + '</select></div>' + journey +
       (l.visitAt && isOpen(l) && l.visitAt > t - 2 * HOUR ? '<div class="small">' + ic('visit', 'i12') + ' ' + (l.tipo === 'venta' ? 'Tasación' : 'Visita') + ': <b>' + whenLabel(l.visitAt) + '</b> · ' + (l.visitConfirmed ? '<span class="fact ok">confirmada</span>' : '<button class="link-btn" data-act="confirm" data-id="' + l.id + '">confirmar</button>') + '</div>' : '') +
@@ -684,8 +689,8 @@
       '<details class="panel"><summary><h3>Origen y campaña</h3></summary><dl class="kv"><div><dt>Canal</dt><dd>' + esc(D.SOURCES[l.src].label) + (l.portal ? ' · ' + esc(l.portal) : '') + '</dd></div><div><dt>Campaña</dt><dd>' + (c ? '<button class="link-btn" data-camp="' + c.id + '">' + esc(c.name) + '</button>' : '—') + '</dd></div><div><dt>Anuncio</dt><dd>' + esc(l.ad || '—') + '</dd></div><div><dt>Primera respuesta</dt><dd>' + (l.firstResponse ? dur(l.firstResponse - l.created) + ' después' : 'pendiente') + '</dd></div></dl></details>' +
       '</div>';
     openDrawer(html);
-    if (keep && $('.dr-body')) $('.dr-body').scrollTop = scroll;
-    $('#dr-stage').addEventListener('change', e => { const v = e.target.value; if (v === 'perdido') { leadDrawer(id, 'lost'); return; } setStage(l, v); });
+    if (keep && $('.dr-body')) $('.dr-body').scrollTop = UI.drawer.panel ? 0 : scroll;
+    $('#dr-stage').addEventListener('change', e => { const v = e.target.value; if (v === 'perdido') { if (l.stage === 'ganado') { toast('No se puede marcar como perdido', 'Este lead ya cerró. Reábrelo primero en otra etapa.'); leadDrawer(id, ''); return; } leadDrawer(id, 'lost'); return; } setStage(l, v); });
     const edit = (sel, fn) => { const el = $(sel); if (el) el.addEventListener('change', () => { fn(el.value); l.score = D.scoreLead(l); addEvent(l, 'note', 'Dato actualizado: ' + el.getAttribute('aria-label') + ' → ' + el.options[el.selectedIndex].text, 'a1'); save(); leadDrawer(id, ''); rerenderSoft(); }); };
     edit('#ed-pago', v => { l.pago = v; l.credito = v === 'Crédito' ? (l.credito || 'Hipotecario') : null; });
     edit('#ed-credito', v => { l.credito = v; });
@@ -758,7 +763,7 @@
       const d = draft();
       const t = now();
       const ag = $('#in-route').dataset.agent;
-      const monto = +$('#in-monto').value || (d.tipo === 'venta' ? 100000 : 90000);
+      const m = +$('#in-monto').value; const monto = m > 0 ? m : (d.tipo === 'venta' ? 100000 : 90000);
       const l = { id: 'L-' + (1000 + S.seq++), tipo: d.tipo, name, phone, email: '—', src: $('#in-src').value, portal: null, campaign: null, ad: null, adset: null, created: t, firstResponse: null, history: [{ stage: 'nuevo', at: t }], stage: 'nuevo', lossReason: null, lostAt: null, visitAt: null, visitConfirmed: false, events: [], next: null, agent: ag, propTipo: d.propTipo, zona: $('#in-zona').value, cur: 'US$' };
       if (d.tipo === 'compra') Object.assign(l, { interest: null, budget: monto, plazo: '1 a 3 meses', pago: d.pago, credito: d.pago === 'Crédito' ? $('#in-credito').value : null });
       else Object.assign(l, { precio: monto, direccion: $('#in-dir').value.trim() || 'Dirección por confirmar', aNombre: d.aNombre, tituloDetalle: d.aNombre ? null : $('#in-detalle').value, motivo: 'Por confirmar' });
@@ -802,7 +807,7 @@
     if (stage === 'perdido') { leadDrawer(l.id, 'lost'); return; }
     const t = now();
     if (!l.firstResponse && stage !== 'nuevo') l.firstResponse = t;
-    l.stage = stage; l.lossReason = null; l.lostStage = null;
+    l.stage = stage; l.lossReason = null; l.lostStage = null; l.lostAt = null;
     l.history.push({ stage, at: t });
     addEvent(l, stage === 'ganado' ? 'win' : 'note', 'Movido a «' + sLabel(l) + '»', 'a1');
     if (isOpen(l)) setNext(l, 2); else l.next = null;
@@ -824,7 +829,7 @@
     addEvent(l, 'call', first ? 'Primera llamada · respondió a los ' + dur(t - l.created) : 'Llamada de seguimiento', l.agent);
     if (l.stage === 'nuevo') { l.stage = 'contactado'; l.history.push({ stage: 'contactado', at: t }); }
     if (isOpen(l)) setNext(l, 2);
-    toast('Llamada registrada', l.name + (first ? ' · primera respuesta en ' + dur(t - l.created) : '') + ' · próximo seguimiento en 2 días');
+    toast('Llamada registrada', l.name + (first ? ' · primera respuesta en ' + dur(t - l.created) : '') + (isOpen(l) ? ' · próximo seguimiento en 2 días' : ''));
     refreshAfter(l);
   }
 
@@ -843,18 +848,23 @@
       if (act === 'derivar-to') return derive(l, a.dataset.to, 'manual');
       if (act === 'wa-send') { if (!l.firstResponse) l.firstResponse = now(); addEvent(l, 'wa', 'WhatsApp enviado', l.agent); toast('WhatsApp registrado', l.name); return refreshAfter(l); }
       if (act === 'cita-save') {
+        if (!isOpen(l)) { toast('Lead cerrado', 'Reábrelo cambiando su etapa'); return; }
         const when = new Date($('#v-date').value).getTime(); if (!when) return;
         l.visitAt = when; l.visitConfirmed = false;
         if (!l.firstResponse) l.firstResponse = now();
-        if (l.tipo === 'compra') { l.interest = $('#v-prop').value; if (sIdx(l, l.stage) < 3) { l.stage = 'visita'; l.history.push({ stage: 'visita', at: now() }); } }
+        if (l.tipo === 'compra') {
+          const np = prop($('#v-prop').value);
+          if (np && np.id !== l.interest) { l.interest = np.id; l.propTipo = np.type; l.zona = np.district; if (np.cur !== l.cur) { l.budget = np.price; l.cur = np.cur; } }
+          if (sIdx(l, l.stage) < 3) { l.stage = 'visita'; l.history.push({ stage: 'visita', at: now() }); } }
         else if (sIdx(l, l.stage) < 1) { l.stage = 'contactado'; l.history.push({ stage: 'contactado', at: now() }); }
         l.next = { at: when - 2 * HOUR, text: 'Confirmar ' + (l.tipo === 'venta' ? 'tasación' : 'visita') };
         addEvent(l, 'visit', (l.tipo === 'venta' ? 'Tasación' : 'Visita a ' + l.interest) + ' agendada para ' + fdt(when), l.agent);
         log('Recordatorios programados para ' + l.name + ' (24 h y 2 h antes)');
         toast(l.tipo === 'venta' ? 'Tasación agendada' : 'Visita agendada', fdt(when) + ' · recordatorio automático por WhatsApp'); return refreshAfter(l);
       }
-      if (act === 'next-save') { const when = new Date($('#n-date').value).getTime(); if (!when) return; l.next = { at: when, text: $('#n-text').value.trim() || 'Llamar' }; addEvent(l, 'note', 'Seguimiento programado: ' + l.next.text + ' · ' + fdt(when), 'a1'); toast('Seguimiento programado', whenLabel(when)); return refreshAfter(l); }
+      if (act === 'next-save') { if (!isOpen(l)) return; const when = new Date($('#n-date').value).getTime(); if (!when) return; l.next = { at: when, text: $('#n-text').value.trim() || 'Llamar' }; addEvent(l, 'note', 'Seguimiento programado: ' + l.next.text + ' · ' + fdt(when), 'a1'); toast('Seguimiento programado', whenLabel(when)); return refreshAfter(l); }
       if (act === 'done') {
+        if (!isOpen(l)) return;
         const txt = l.next ? l.next.text : 'Seguimiento';
         if (!l.firstResponse) l.firstResponse = now();
         addEvent(l, 'call', 'Hecho: ' + txt, l.agent);
@@ -863,6 +873,7 @@
       }
       if (act === 'confirm') { l.visitConfirmed = true; addEvent(l, 'wa', 'Cliente confirmó la cita por WhatsApp', null); toast('Cita confirmada', l.name); return refreshAfter(l); }
       if (act === 'lost-save') {
+        if (!isOpen(l)) { toast('Lead cerrado', 'Ya no está abierto'); return leadDrawer(l.id, ''); }
         const r = $('#lost-r').value; const t = now();
         l.lostStage = l.stage; l.stage = 'perdido'; l.lossReason = r; l.lostAt = t; l.next = null; l.history.push({ stage: 'perdido', at: t });
         addEvent(l, 'lost', 'Marcado como perdido: ' + r, 'a1'); toast('Lead perdido', r); return refreshAfter(l);
@@ -908,10 +919,14 @@
   }
   function simulateLead() {
     const l = D.incoming(S, now());
+    const best = rec(l).agent;
+    if (best.id !== l.agent) { l.agent = best.id; l.events.forEach(e => { if (e.type === 'auto' && /^Derivado a/.test(e.text)) e.text = 'Derivado a ' + agentName(best.id) + ' · perfil «' + best.perfil + '»'; }); }
+    const welcomeOn = S.automations.find(a => a.key === 'welcome').on;
+    if (!welcomeOn) l.events = l.events.filter(e => !/^WhatsApp de bienvenida/.test(e.text));
     S.leads.unshift(l);
     const ag = agent(l.agent);
     log('Lead ' + l.id + ' (' + l.tipo + ') derivado a ' + agentName(l.agent) + ' por perfil «' + ag.perfil + '»');
-    S.automations.forEach(a => { if (a.key === 'assign' || a.key === 'welcome') a.runs++; });
+    S.automations.forEach(a => { if ((a.key === 'assign' || a.key === 'welcome') && a.on) a.runs++; });
     save();
     toast('Nuevo lead de ' + l.tipo + ' · ' + D.SOURCES[l.src].short, l.name + ' → ' + ag.name + ' (' + ag.perfil + ')', l.id);
     rerenderSoft();
@@ -924,9 +939,11 @@
       const crossed = m => l.created + m * MIN > prev && l.created + m * MIN <= t;
       if (crossed(5)) { log('Alerta a ' + agentName(l.agent) + ': ' + l.name + ' lleva 5 min sin respuesta'); toast('5 min sin respuesta', l.name + ' · se avisó a ' + agentName(l.agent), l.id); }
       if (crossed(15)) {
-        const others = S.agents.map(a => a.id === l.agent ? Object.assign({}, a, { onDuty: false }) : a);
-        const to = D.recommend(l, others).agent;
-        if (to && to.id !== l.agent) { log(l.name + ' pasó a ' + agentName(to.id) + ' por falta de respuesta'); derive(l, to.id, 'sla'); toast('Derivado automáticamente', l.name + ' → ' + agentName(to.id), l.id); }
+        const cur = agent(l.agent);
+        const cands = S.agents.filter(a => a.rr && a.onDuty && a.id !== l.agent && a.perfil === cur.perfil);
+        const to = cands.length ? rec(l, cands).agent : null;
+        if (to) { log(l.name + ' pasó a ' + agentName(to.id) + ' (mismo perfil) por falta de respuesta'); derive(l, to.id, 'sla'); toast('Derivado automáticamente', l.name + ' → ' + agentName(to.id), l.id); }
+        else { log('No hay otro asesor con el perfil «' + cur.perfil + '» en turno: se avisa a Alberto por ' + l.name); addEvent(l, 'auto', 'Sin otro asesor del mismo perfil en turno: aviso a Alberto (15 min sin respuesta)'); toast('Aviso a Alberto', l.name + ': no hay otro asesor de ' + cur.perfil + ' en turno', l.id); save(); }
       }
       if (crossed(30)) { log('Aviso a Alberto: ' + l.name + ' lleva 30 min sin respuesta'); addEvent(l, 'auto', 'Aviso a Alberto (30 min sin respuesta)'); toast('Aviso a Alberto', l.name + ' lleva 30 min esperando', l.id); save(); }
     });
@@ -953,6 +970,7 @@
     box.hidden = false;
   }
   function openSheet() {
+    $('#toasts').innerHTML = '';
     const cur = route();
     $('#sheet').innerHTML = '<div class="sheet-inner"><div class="sheet-grab"></div>' + ['pipeline', 'reportes', 'ajustes'].map(id => { const r = ROUTES.find(x => x.id === id); return '<a href="#' + id + '" class="' + (id === cur ? 'active' : '') + '">' + ic(r.icon) + '<span>' + r.title + '</span></a>'; }).join('') +
       '<hr><button type="button" data-sheet="sim">' + ic('auto') + '<span>Simular lead entrante</span></button><button type="button" data-sheet="live">' + ic('clock') + '<span>' + (UI.live ? 'Pausar modo en vivo' : 'Activar modo en vivo') + '</span></button><a href="index.html">' + ic('doc') + '<span>Volver a la propuesta</span></a><button type="button" data-sheet="reset">' + ic('lost') + '<span>Reiniciar demo</span></button></div>';
