@@ -10,10 +10,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="assets/base.css">
 <style>
-  /* Layout: columna de lectura de 1120px; una sola banda oscura (el recorrido del lead) como momento fuerte. */
-  :root { --band: #0f1f1e; --band-ink: #e3eeec; --band-muted: #93aaa6; --band-line: #274140; --band-accent: #6fd6cc; }
-  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --band: #071010; --band-line: #1d3130; } }
-  :root[data-theme="dark"] { --band: #071010; --band-line: #1d3130; }
+  /* Layout: columna de lectura de 1120px, todo en blanco; la banda del recorrido se separa con un gris muy claro. */
+  :root { --band: #f3f3f0; --band-ink: var(--ink); --band-muted: var(--ink-2); --band-line: var(--line-strong); --band-accent: var(--accent); }
 
   .wrap { max-width: 1120px; margin: 0 auto; padding-inline: 24px; }
   header.bar { padding-block: 18px; }
@@ -73,14 +71,14 @@
 
   /* Banda del recorrido */
   .band { background: var(--band); color: var(--band-ink); }
-  .band h2.sec { color: #fff; }
+  .band h2.sec { color: var(--ink); }
   .band p.intro { color: var(--band-muted); }
   .flow { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0; counter-reset: s; }
   .flow li { position: relative; padding: 0 16px 0 0; counter-increment: s; }
   .flow li::before { content: counter(s, decimal-leading-zero); font-family: var(--font-mono); font-size: 12px; color: var(--band-accent); display: block; margin-bottom: 10px; }
   .flow li::after { content: ""; position: absolute; top: 7px; left: 30px; right: 10px; height: 1px; background: var(--band-line); }
   .flow li:last-child::after { display: none; }
-  .flow b { display: block; font-family: var(--font-display); font-size: 17px; color: #fff; margin-bottom: 6px; line-height: 1.2; }
+  .flow b { display: block; font-family: var(--font-display); font-size: 17px; color: var(--ink); margin-bottom: 6px; line-height: 1.2; }
   .flow span { font-size: 13.5px; color: var(--band-muted); display: block; }
   .flow .time { font-family: var(--font-mono); font-size: 12px; color: var(--band-accent); margin-top: 8px; }
   .loop { margin-top: 36px; border: 1px dashed var(--band-line); border-radius: 14px; padding: 16px 18px; display: flex; gap: 14px; align-items: flex-start; }
