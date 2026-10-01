@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1f1e">
 <title>Inmoconecta CRM · Demo</title>
-<meta name="description" content="Demo funcional del CRM propuesto para Inmoconecta Huancayo: leads de Meta y TikTok, urgentes, pipeline, stock de propiedades, captación y trazabilidad.">
+<meta name="description" content="Demo funcional del CRM propuesto por Kallari para Inmoconecta Huancayo: leads de compra y venta, derivación por perfil de asesor, seguimiento, captación y stock.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
@@ -13,7 +14,7 @@
 </head>
 <body>
 <div class="app">
-  <aside class="side" id="side" aria-label="Menú principal">
+  <aside class="side" aria-label="Menú principal">
     <div class="brand">
       <div class="brand-mark" aria-hidden="true">i</div>
       <div>
@@ -34,31 +35,31 @@
 
   <div class="main">
     <div class="demo-banner" role="note">
-      <span><b>Demo preparada por Kallari con datos de ejemplo.</b> Nombres, teléfonos y cifras son ficticios. Lo que cambies se guarda solo en este navegador.</span>
-      <button type="button" id="reset-demo">Reiniciar demo</button>
+      <span><b>Demo de Kallari con datos de ejemplo.</b><span class="hide-sm"> Nombres, teléfonos y cifras son ficticios; los cambios se guardan solo en este navegador.</span></span>
+      <button type="button" id="reset-demo">Reiniciar</button>
     </div>
     <header class="top">
-      <button class="btn ghost sm menu-btn" id="menu-btn" type="button" aria-label="Abrir menú"></button>
       <div class="top-titles">
-        <h1 id="page-title">Panel</h1>
+        <h1 id="page-title">Inicio</h1>
         <div class="sub" id="page-sub"></div>
       </div>
       <div class="top-actions">
-        <div class="search">
+        <div class="search hide-sm">
           <span id="search-ic"></span>
-          <input id="global-search" type="search" placeholder="Buscar lead, teléfono, código…" autocomplete="off" aria-label="Buscar">
+          <input id="global-search" type="search" placeholder="Buscar lead o código…" autocomplete="off" aria-label="Buscar">
           <div class="search-results" id="search-results" hidden></div>
         </div>
-        <label class="live-toggle" id="live-toggle" title="Cuando está activo, entra un lead simulado de Meta o TikTok cada 45 segundos">
-          <span class="live-dot"></span><span class="lbl">En vivo</span>
-        </label>
-        <button class="btn primary sm" id="sim-lead" type="button">Simular lead</button>
+        <button type="button" class="live-toggle hide-sm" id="live-toggle" title="Entra un lead simulado cada 45 segundos" aria-pressed="false"><span class="live-dot"></span><span>En vivo</span></button>
+        <button class="btn sm hide-sm" id="sim-lead" type="button">Simular lead</button>
+        <button class="btn primary sm" id="new-lead-top" type="button"></button>
       </div>
     </header>
     <main class="view" id="view" tabindex="-1"></main>
   </div>
 </div>
 
+<nav class="bottom-nav" id="bottom-nav" aria-label="Navegación"></nav>
+<div class="sheet" id="sheet" hidden></div>
 <div class="scrim" id="scrim" hidden></div>
 <aside class="drawer" id="drawer" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="dr-title"></aside>
 <div class="toasts" id="toasts" aria-live="polite"></div>

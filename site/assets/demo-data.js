@@ -1,6 +1,7 @@
 /* Datos de ejemplo para la demo del CRM de Inmoconecta Huancayo.
    Todo es ficticio y se genera de forma determinista respecto a la hora actual,
-   para que los tiempos de espera y los contadores se vean "en vivo". */
+   para que los tiempos de espera y los contadores se vean "en vivo".
+   Cada lead es de COMPRA o de VENTA (propietario que quiere vender). */
 (function () {
   'use strict';
 
@@ -20,8 +21,8 @@
   }
 
   const SOURCES = {
-    fb: { label: 'Facebook Lead Ads', short: 'Meta · FB', group: 'meta' },
-    ig: { label: 'Instagram Lead Ads', short: 'Meta · IG', group: 'meta' },
+    fb: { label: 'Facebook Lead Ads', short: 'Facebook', group: 'meta' },
+    ig: { label: 'Instagram Lead Ads', short: 'Instagram', group: 'meta' },
     tt: { label: 'TikTok Lead Gen', short: 'TikTok', group: 'tiktok' },
     wa: { label: 'WhatsApp directo', short: 'WhatsApp', group: 'otros' },
     web: { label: 'Sitio web', short: 'Web', group: 'otros' },
@@ -29,39 +30,83 @@
     ref: { label: 'Referido', short: 'Referido', group: 'otros' }
   };
 
-  const STAGES = [
-    { id: 'nuevo', label: 'Nuevo' },
-    { id: 'contactado', label: 'Contactado' },
-    { id: 'calificado', label: 'Calificado' },
-    { id: 'visita', label: 'Visita' },
-    { id: 'negociacion', label: 'Negociación' },
-    { id: 'separacion', label: 'Separación' },
-    { id: 'ganado', label: 'Cerrado' },
-    { id: 'perdido', label: 'Perdido' }
-  ];
+  // Etapas según lo que quiere el cliente
+  const STAGES = {
+    compra: [
+      { id: 'nuevo', label: 'Nuevo' },
+      { id: 'contactado', label: 'Contactado' },
+      { id: 'calificado', label: 'Calificado' },
+      { id: 'visita', label: 'Visita' },
+      { id: 'negociacion', label: 'Negociación' },
+      { id: 'separacion', label: 'Separación' },
+      { id: 'ganado', label: 'Compró' }
+    ],
+    venta: [
+      { id: 'nuevo', label: 'Nuevo' },
+      { id: 'contactado', label: 'Contactado' },
+      { id: 'tasacion', label: 'Tasación' },
+      { id: 'exclusiva', label: 'Exclusiva firmada' },
+      { id: 'publicada', label: 'Publicada' },
+      { id: 'ganado', label: 'Vendida' }
+    ]
+  };
 
-  const LOSS_BY_STAGE = [
-    ['No responde', 'No responde', 'No responde', 'Datos falsos o duplicado'],
-    ['Solo estaba averiguando', 'Precio fuera de presupuesto', 'No responde'],
-    ['Precio fuera de presupuesto', 'No califica a crédito', 'Ubicación no le convence', 'Solo estaba averiguando'],
-    ['La propiedad no le convenció', 'Ubicación no le convence', 'Precio fuera de presupuesto', 'Compró con otra inmobiliaria'],
-    ['No hubo acuerdo en precio', 'No califica a crédito', 'Compró con otra inmobiliaria'],
-    ['Crédito denegado por el banco', 'Desistió de la compra']
-  ];
+  const PAGO = ['Contado', 'Crédito', 'No sabe'];
+  const CREDITO = ['Hipotecario', 'MiVivienda', 'Techo Propio'];
+  const NO_A_NOMBRE = ['Herencia: sucesión en trámite', 'A nombre de sus padres', 'Copropiedad con hermanos', 'Sin inscribir en SUNARP'];
+  const PROP_TYPES = ['Casa', 'Departamento', 'Terreno', 'Local comercial', 'Oficina', 'Casa de campo'];
+  const DISTRICTS = ['Huancayo', 'El Tambo', 'Chilca', 'Pilcomayo', 'Huancán', 'San Agustín de Cajas', 'Sapallanga', 'Concepción', 'Chupaca', 'Sicaya'];
+  const STREETS = ['Jr. Ica', 'Av. Ferrocarril', 'Jr. Arequipa', 'Av. Huancavelica', 'Calle Real', 'Jr. Puno', 'Av. Mariscal Castilla', 'Jr. Lima', 'Av. 9 de Diciembre', 'Pje. Los Álamos', 'Jr. Ancash', 'Av. Leoncio Prado'];
 
-  const LOSS_REASONS = [
-    'No responde', 'Datos falsos o duplicado', 'Solo estaba averiguando', 'Precio fuera de presupuesto',
-    'No califica a crédito', 'Ubicación no le convence', 'La propiedad no le convenció',
-    'Compró con otra inmobiliaria', 'No hubo acuerdo en precio', 'Crédito denegado por el banco', 'Desistió de la compra'
-  ];
+  const LOSS = {
+    compra: [
+      ['No responde', 'No responde', 'No responde', 'Datos falsos o duplicado'],
+      ['Solo estaba averiguando', 'Precio fuera de presupuesto', 'No responde'],
+      ['Precio fuera de presupuesto', 'No califica a crédito', 'Ubicación no le convence', 'Solo estaba averiguando'],
+      ['La propiedad no le convenció', 'Ubicación no le convence', 'Precio fuera de presupuesto', 'Compró con otra inmobiliaria'],
+      ['No hubo acuerdo en precio', 'No califica a crédito', 'Compró con otra inmobiliaria'],
+      ['Crédito denegado por el banco', 'Desistió de la compra']
+    ],
+    venta: [
+      ['No responde', 'No responde', 'Datos falsos o duplicado'],
+      ['Solo quería saber cuánto vale', 'Ya no quiere vender', 'No está a su nombre y no puede sanear'],
+      ['Precio esperado fuera de mercado', 'Firmó con otra inmobiliaria', 'No acepta exclusividad'],
+      ['Desistió de vender'],
+      ['Retiró la propiedad del mercado']
+    ]
+  };
+  const LOSS_REASONS = {
+    compra: ['No responde', 'Datos falsos o duplicado', 'Solo estaba averiguando', 'Precio fuera de presupuesto', 'No califica a crédito', 'Ubicación no le convence', 'La propiedad no le convenció', 'Compró con otra inmobiliaria', 'No hubo acuerdo en precio', 'Crédito denegado por el banco', 'Desistió de la compra'],
+    venta: ['No responde', 'Datos falsos o duplicado', 'Solo quería saber cuánto vale', 'Ya no quiere vender', 'No está a su nombre y no puede sanear', 'Precio esperado fuera de mercado', 'Firmó con otra inmobiliaria', 'No acepta exclusividad', 'Desistió de vender', 'Retiró la propiedad del mercado']
+  };
 
+  // Perfiles de asesor: definen a quién se deriva cada lead
   const AGENTS = [
-    { id: 'a1', name: 'Alberto', last: '(Bróker)', role: 'Bróker · Propietario', initials: 'AL', speed: 8, onDuty: false, rr: false },
-    { id: 'a2', name: 'Lucía', last: 'Chuquillanqui', role: 'Asesora comercial', initials: 'LC', speed: 2.5, onDuty: true, rr: true },
-    { id: 'a3', name: 'Diego', last: 'Orihuela', role: 'Asesor comercial', initials: 'DO', speed: 5, onDuty: true, rr: true },
-    { id: 'a4', name: 'Carla', last: 'Ñaupari', role: 'Asesora comercial', initials: 'CÑ', speed: 3.5, onDuty: true, rr: true },
-    { id: 'a5', name: 'Marco', last: 'Canchari', role: 'Asesor comercial', initials: 'MC', speed: 14, onDuty: false, rr: true }
+    { id: 'a1', name: 'Alberto', last: '', role: 'Bróker · Propietario', initials: 'AL', perfil: 'Supervisión y escalamientos', tags: ['Ve todos los leads', 'Recibe escalamientos'], match: {}, speed: 8, onDuty: true, rr: false },
+    { id: 'a2', name: 'Lucía', last: 'Chuquillanqui', role: 'Asesora', initials: 'LC', perfil: 'Compradores con crédito', tags: ['Compra', 'Crédito', 'No sabe cómo pagar'], match: { tipo: 'compra', pago: ['Crédito', 'No sabe'] }, speed: 2.5, onDuty: true, rr: true },
+    { id: 'a3', name: 'Diego', last: 'Orihuela', role: 'Asesor', initials: 'DO', perfil: 'Terrenos y lotes', tags: ['Compra', 'Terrenos', 'Proyectos de lotes'], match: { tipo: 'compra', propTipos: ['Terreno'] }, speed: 5, onDuty: true, rr: true },
+    { id: 'a4', name: 'Carla', last: 'Ñaupari', role: 'Asesora', initials: 'CÑ', perfil: 'Captación de propietarios', tags: ['Venta', 'Tasaciones', 'Exclusivas'], match: { tipo: 'venta' }, speed: 3.5, onDuty: true, rr: true },
+    { id: 'a5', name: 'Marco', last: 'Canchari', role: 'Asesor', initials: 'MC', perfil: 'Compradores al contado', tags: ['Compra', 'Contado', 'Casas, departamentos y locales'], match: { tipo: 'compra', pago: ['Contado'] }, speed: 12, onDuty: true, rr: true }
   ];
+
+  // Elige el asesor cuyo perfil encaja mejor con el lead
+  function recommend(l, agents) {
+    const pool = agents.filter(a => a.rr);
+    const load = id => (l._load && l._load[id]) || 0;
+    const scored = pool.map(a => {
+      let s = 0;
+      const m = a.match || {};
+      if (m.tipo === l.tipo) s += 10;
+      if (l.tipo === 'compra') {
+        if (m.propTipos && m.propTipos.includes(l.propTipo)) s += 8;
+        if (m.pago && m.pago.includes(l.pago)) s += 6;
+      }
+      if (!a.onDuty) s -= 30;
+      return { a, s: s - load(a.id) * 0.01 };
+    }).sort((x, y) => y.s - x.s);
+    const a = scored[0].a;
+    return { agent: a, reason: a.perfil };
+  }
 
   const OWNERS = [
     { id: 'o1', name: 'Rosa Elena Vílchez', phone: '+51 964 218 330', since: 410 },
@@ -74,11 +119,9 @@
     { id: 'o8', name: 'Constructora Valle Alto E.I.R.L.', phone: '+51 064 211 560', since: 180 },
     { id: 'o9', name: 'Hugo Taipe Camargo', phone: '+51 978 145 309', since: 20 },
     { id: 'o10', name: 'Noemí Yupanqui Rivera', phone: '+51 943 887 126', since: 12 },
-    { id: 'o11', name: 'César Mendoza Ccanto', phone: '+51 951 330 472', since: 8 },
-    { id: 'o12', name: 'Maribel Rojas Huamán', phone: '+51 966 519 038', since: 3 }
+    { id: 'o11', name: 'César Mendoza Ccanto', phone: '+51 951 330 472', since: 8 }
   ];
 
-  // listed = días en el mercado; priceHist = precios anteriores (más antiguo primero)
   const PROPERTIES = [
     { id: 'INC-101', type: 'Departamento', op: 'Venta', district: 'Huancayo', address: 'Urb. San Carlos, Jr. Los Pinos', cur: 'US$', price: 118000, priceHist: [132000, 125000], area: 112, beds: 3, baths: 2, parking: 1, owner: 'o1', listed: 124, status: 'Disponible', exclusive: true, commission: 3, campaigns: ['c1'], hue: 190 },
     { id: 'INC-102', type: 'Casa', op: 'Venta', district: 'El Tambo', address: 'Av. Mariscal Castilla, cdra. 24', cur: 'US$', price: 165000, priceHist: [], area: 210, land: 180, beds: 4, baths: 3, parking: 2, owner: 'o2', listed: 45, status: 'Disponible', exclusive: true, commission: 3, campaigns: ['c2'], hue: 28 },
@@ -104,7 +147,7 @@
     { id: 'c3', name: 'Tour casa Palián', platform: 'tiktok', source: ['tt'], objective: 'TikTok Lead Gen · Instant Form', form: 'Agenda tu recorrido', status: 'Activa', spend: 450, days: 40, props: ['INC-106'] },
     { id: 'c4', name: 'Lotes financiados Huamancaca', platform: 'tiktok', source: ['tt'], objective: 'TikTok Lead Gen · Instant Form', form: 'Cotiza tu lote', status: 'Activa', spend: 900, days: 60, props: ['INC-112', 'INC-103'] },
     { id: 'c5', name: 'Terrenos y casas de campo', platform: 'meta', source: ['fb'], objective: 'Lead Ads · Formulario instantáneo', form: 'Quiero mi casa de campo', status: 'Pausada', spend: 450, days: 35, props: ['INC-108', 'INC-110'] },
-    { id: 'c6', name: 'Vende tu propiedad con nosotros', platform: 'meta', source: ['ig', 'fb'], objective: 'Captación de propietarios', form: 'Tasación gratuita', status: 'Activa', spend: 500, days: 30, props: [], sellers: true },
+    { id: 'c6', name: 'Vende tu propiedad con nosotros', platform: 'meta', source: ['ig', 'fb'], objective: 'Lead Ads · Captación de propietarios', form: 'Tasación gratuita', status: 'Activa', spend: 500, days: 30, props: [], sellers: true },
     { id: 'c7', name: 'Estrena depa · Ferrocarril y Chilca', platform: 'tiktok', source: ['tt'], objective: 'TikTok Lead Gen · Spark Ads', form: 'Separa con US$ 500', status: 'Activa', spend: 550, days: 21, props: ['INC-105', 'INC-113'] },
     { id: 'c8', name: 'Locales y oficinas en el centro', platform: 'meta', source: ['fb'], objective: 'Lead Ads · Formulario instantáneo', form: 'Busco local', status: 'Activa', spend: 350, days: 34, props: ['INC-104', 'INC-109', 'INC-116'] }
   ];
@@ -112,11 +155,8 @@
   const FIRST = ['José', 'María', 'Luis', 'Rosa', 'Carlos', 'Ana', 'Jorge', 'Carmen', 'Miguel', 'Juana', 'Pedro', 'Elena', 'Raúl', 'Patricia', 'Víctor', 'Sandra', 'Julio', 'Gladys', 'Renzo', 'Milagros', 'Kevin', 'Yesenia', 'Edwin', 'Flor', 'Álvaro', 'Katherine', 'Hugo', 'Diana', 'César', 'Roxana', 'Frank', 'Maribel', 'Jhon', 'Liliana', 'Wilmer', 'Noemí', 'Brenda', 'Iván', 'Pamela', 'Ronald'];
   const LAST = ['Quispe', 'Huamán', 'Rojas', 'Paucar', 'Ccanto', 'Mendoza', 'Rivera', 'Chuquillanqui', 'Poma', 'Salazar', 'Cárdenas', 'Arias', 'Lazo', 'Orihuela', 'Canchari', 'Espinoza', 'Sánchez', 'Vílchez', 'Taipe', 'Meza', 'Ñaupari', 'Soto', 'Baquerizo', 'Inga', 'Yupanqui', 'Camargo', 'Aliaga', 'Rafael', 'Ticse', 'Zárate'];
   const PLAZO = ['Este mes', '1 a 3 meses', '3 a 6 meses', 'Solo averiguando'];
-  const PAGO = ['Contado', 'Crédito hipotecario', 'Crédito MiVivienda', 'Techo Propio'];
   const PORTALS = ['Urbania', 'Adondevivir'];
-
   const QUALITY = { fb: 1, ig: 1.05, tt: 0.78, wa: 1.2, web: 1.15, portal: 1.25, ref: 1.45 };
-  const SOURCE_WEIGHTS = [['fb', 26], ['ig', 17], ['tt', 34], ['wa', 8], ['web', 7], ['portal', 7], ['ref', 3]];
 
   function pickW(r, list) {
     const total = list.reduce((s, x) => s + x[1], 0);
@@ -126,18 +166,14 @@
   }
   const pick = (r, arr) => arr[Math.floor(r() * arr.length)];
   const between = (r, a, b) => a + r() * (b - a);
+  const propById = id => PROPERTIES.find(p => p.id === id);
+  const fmtMoney = (cur, v) => cur + ' ' + Math.round(v).toLocaleString('en-US');
 
   function phone(r) {
     let s = '+51 9';
     for (let i = 0; i < 8; i++) { s += Math.floor(r() * 10); if (i === 1 || i === 4) s += ' '; }
     return s;
   }
-
-  function propById(id) { return PROPERTIES.find(p => p.id === id); }
-
-  function fmtMoney(cur, v) { return cur + ' ' + Math.round(v).toLocaleString('en-US'); }
-
-  // Probabilidad de lograr contacto según minutos de espera hasta la primera respuesta.
   function contactFactor(mins) {
     if (mins < 5) return 1;
     if (mins < 30) return 0.8;
@@ -145,228 +181,219 @@
     if (mins < 1440) return 0.45;
     return 0.3;
   }
+  const stageList = tipo => STAGES[tipo];
+  const stageLabel = (tipo, id) => id === 'perdido' ? 'Perdido' : (STAGES[tipo].find(s => s.id === id) || {}).label || id;
 
-  function campaignFor(r, src) {
-    const opts = CAMPAIGNS.filter(c => c.source.includes(src) && !c.sellers);
-    if (!opts.length) return null;
-    // Campañas pausadas reciben menos leads
-    const w = opts.map(c => [c.id, c.status === 'Activa' ? 3 : 1]);
-    return pickW(r, w);
+  const NEXT = {
+    compra: { nuevo: 'Volver a llamar', contactado: 'Calificar: presupuesto y forma de pago', calificado: 'Enviar 3 opciones y proponer visita', visita: 'Confirmar la visita', negociacion: 'Llamar al propietario por la contraoferta', separacion: 'Coordinar firma de minuta' },
+    venta: { nuevo: 'Volver a llamar', contactado: 'Agendar tasación', tasacion: 'Enviar propuesta de exclusiva', exclusiva: 'Coordinar fotos y video', publicada: 'Enviar reporte semanal al propietario' }
+  };
+
+  function scoreLead(l) {
+    let s = 30;
+    if (l.tipo === 'compra') {
+      s += { 'Este mes': 30, '1 a 3 meses': 20, '3 a 6 meses': 8, 'Solo averiguando': -10 }[l.plazo] || 0;
+      s += { 'Contado': 18, 'Crédito': 10, 'No sabe': 0 }[l.pago] || 0;
+    } else {
+      s += l.aNombre ? 25 : 2;
+      s += 12;
+    }
+    const idx = STAGES[l.tipo].findIndex(x => x.id === l.stage);
+    s += l.stage === 'perdido' ? -30 : Math.max(0, idx) * 5;
+    s += { ref: 10, portal: 6, web: 5, wa: 5, fb: 0, ig: 0, tt: -4 }[l.src] || 0;
+    return Math.max(3, Math.min(99, s));
   }
 
-  let rrIndex = 0;
-  function nextAgent(agents) {
-    const pool = agents.filter(a => a.rr);
-    const a = pool[rrIndex % pool.length];
-    rrIndex++;
-    return a;
-  }
-
-  function makeLead(r, now, opts) {
-    const src = opts.src || pickW(r, SOURCE_WEIGHTS);
-    const campaign = opts.campaign !== undefined ? opts.campaign : campaignFor(r, src);
-    const camp = CAMPAIGNS.find(c => c.id === campaign);
-    const pool = camp ? camp.props : PROPERTIES.filter(p => p.status !== 'En captación').map(p => p.id);
-    const interest = opts.interest || pick(r, pool);
-    const prop = propById(interest);
-    const agent = opts.agent || nextAgent(AGENTS).id;
-    const ag = AGENTS.find(a => a.id === agent);
+  function makeLead(r, now, agents, opts) {
+    const tipo = opts.tipo || (r() < 0.26 ? 'venta' : 'compra');
     const name = opts.name || (pick(r, FIRST) + ' ' + pick(r, LAST) + ' ' + pick(r, LAST));
-    const nameParts = name.split(' ');
+    const parts = name.split(' ');
     const created = opts.created;
-    const plazo = src === 'tt' ? pickW(r, [[PLAZO[0], 1], [PLAZO[1], 3], [PLAZO[2], 3], [PLAZO[3], 4]]) : pickW(r, [[PLAZO[0], 2], [PLAZO[1], 4], [PLAZO[2], 3], [PLAZO[3], 2]]);
-    const pago = prop.op === 'Alquiler' ? 'Contado' : pickW(r, [[PAGO[0], 3], [PAGO[1], 4], [PAGO[2], 3], [PAGO[3], prop.price < 60000 ? 2 : 0.2]]);
-    const budget = Math.round(prop.price * between(r, 0.78, 1.08) / (prop.cur === 'S/' ? 100 : 1000)) * (prop.cur === 'S/' ? 100 : 1000);
+    let src, campaign = null;
+    const lead = { id: opts.id, tipo, name, phone: phone(r), email: (parts[0] + '.' + parts[1]).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '') + '@gmail.com', created, firstResponse: null, history: [{ stage: 'nuevo', at: created }], stage: 'nuevo', lossReason: null, lostAt: null, visitAt: null, visitConfirmed: false, events: [], next: null, derived: [] };
 
-    const lead = {
-      id: opts.id,
-      name,
-      phone: phone(r),
-      email: (nameParts[0] + '.' + nameParts[1]).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '') + Math.floor(r() * 90 + 10) + '@gmail.com',
-      src,
-      portal: src === 'portal' ? pick(r, PORTALS) : null,
-      campaign,
-      adset: camp ? (camp.platform === 'tiktok' ? pick(r, ['Huancayo 25-45 · Intereses vivienda', 'Huancayo + Lima (migrantes)', 'Lookalike clientes']) : pick(r, ['Huancayo 25-55 · Propietarios', 'El Tambo y Chilca · 28-50', 'Retargeting web 30 días', 'Lookalike 1% compradores'])) : null,
-      ad: camp ? pick(r, camp.platform === 'tiktok' ? ['Video recorrido 45 s', 'Video testimonio', 'Spark Ad asesora'] : ['Carrusel fotos', 'Reel recorrido', 'Imagen precio + ubicación']) : null,
-      interest,
-      budget,
-      cur: prop.cur,
-      plazo,
-      pago,
-      zona: prop.district,
-      agent,
-      created,
-      firstResponse: null,
-      history: [{ stage: 'nuevo', at: created }],
-      stage: 'nuevo',
-      lossReason: null,
-      lostAt: null,
-      visitAt: null,
-      visitConfirmed: false,
-      events: [],
-      tasks: []
-    };
+    if (tipo === 'venta') {
+      src = opts.src || pickW(r, [['fb', 22], ['ig', 26], ['wa', 24], ['web', 10], ['ref', 18]]);
+      if (src === 'fb' || src === 'ig') campaign = 'c6';
+      lead.propTipo = opts.propTipo || pickW(r, [['Casa', 5], ['Departamento', 3], ['Terreno', 3], ['Local comercial', 1]]);
+      lead.zona = opts.zona || pick(r, DISTRICTS);
+      lead.direccion = pick(r, STREETS) + ' ' + Math.floor(between(r, 100, 1900));
+      const base = { Casa: [70000, 190000], Departamento: [60000, 130000], Terreno: [15000, 70000], 'Local comercial': [80000, 220000] }[lead.propTipo];
+      lead.cur = 'US$';
+      lead.precio = Math.round(between(r, base[0], base[1]) / 1000) * 1000;
+      lead.aNombre = opts.aNombre !== undefined ? opts.aNombre : r() < 0.66;
+      lead.tituloDetalle = lead.aNombre ? null : pick(r, NO_A_NOMBRE);
+      lead.motivo = pick(r, ['Se muda a Lima', 'Quiere comprar algo más grande', 'Herencia familiar', 'Necesita liquidez', 'Se va al extranjero']);
+    } else {
+      src = opts.src || pickW(r, [['fb', 26], ['ig', 17], ['tt', 34], ['wa', 7], ['web', 7], ['portal', 7], ['ref', 2]]);
+      if (opts.campaign !== undefined) campaign = opts.campaign;
+      else {
+        const opts2 = CAMPAIGNS.filter(c => c.source.includes(src) && !c.sellers);
+        if (opts2.length) campaign = pickW(r, opts2.map(c => [c.id, c.status === 'Activa' ? 3 : 1]));
+      }
+      const camp = CAMPAIGNS.find(c => c.id === campaign);
+      const pool = camp ? camp.props : PROPERTIES.filter(p => p.status !== 'En captación').map(p => p.id);
+      lead.interest = opts.interest || pick(r, pool);
+      const p = propById(lead.interest);
+      lead.propTipo = p.type;
+      lead.zona = p.district;
+      lead.cur = p.cur;
+      lead.budget = Math.round(p.price * between(r, 0.78, 1.08) / (p.cur === 'S/' ? 100 : 1000)) * (p.cur === 'S/' ? 100 : 1000);
+      lead.plazo = src === 'tt' ? pickW(r, [[PLAZO[0], 1], [PLAZO[1], 3], [PLAZO[2], 3], [PLAZO[3], 4]]) : pickW(r, [[PLAZO[0], 2], [PLAZO[1], 4], [PLAZO[2], 3], [PLAZO[3], 2]]);
+      lead.pago = opts.pago || (p.op === 'Alquiler' ? 'Contado' : pickW(r, src === 'tt' ? [['Contado', 2], ['Crédito', 3], ['No sabe', 5]] : [['Contado', 4], ['Crédito', 4], ['No sabe', 2]]));
+      lead.credito = lead.pago === 'Crédito' ? pickW(r, [['Hipotecario', 4], ['MiVivienda', 4], ['Techo Propio', p.price < 40000 ? 3 : 0.2]]) : null;
+    }
+    lead.src = src;
+    lead.portal = src === 'portal' ? pick(r, PORTALS) : null;
+    lead.campaign = campaign;
+    const camp = CAMPAIGNS.find(c => c.id === campaign);
+    lead.adset = camp ? pick(r, camp.platform === 'tiktok' ? ['Huancayo 25-45 · Vivienda', 'Huancayo + Lima (migrantes)', 'Lookalike clientes'] : ['Huancayo 25-55', 'El Tambo y Chilca · 28-50', 'Retargeting web 30 días', 'Lookalike compradores']) : null;
+    lead.ad = camp ? pick(r, camp.platform === 'tiktok' ? ['Video recorrido 45 s', 'Video testimonio', 'Spark Ad asesora'] : ['Carrusel de fotos', 'Reel recorrido', 'Imagen precio + ubicación']) : null;
+
+    // Derivación por perfil (en la mayoría de casos)
+    const rec = recommend(lead, agents);
+    const ag = opts.agent ? agents.find(a => a.id === opts.agent) : (opts.forceRec || r() < 0.88 ? rec.agent : pick(r, agents.filter(a => a.rr)));
+    lead.agent = ag.id;
 
     const ev = (at, type, text, by) => { if (at <= now) lead.events.push({ at, type, text, by: by || null }); };
-    ev(created, 'in', 'Ingresó desde ' + SOURCES[src].label + (lead.portal ? ' (' + lead.portal + ')' : '') + (camp ? ' · Campaña «' + camp.name + '» · Formulario «' + camp.form + '»' : ''));
-    ev(created + 2000, 'auto', 'Asignado a ' + ag.name + ' ' + ag.last + (ag.rr ? ' por turno rotativo' : ''));
-    ev(created + 35000, 'auto', 'WhatsApp de bienvenida enviado con la ficha de ' + interest);
+    const what = tipo === 'venta' ? 'Quiere vender: ' + lead.propTipo.toLowerCase() + ' en ' + lead.zona : 'Quiere comprar: ' + lead.propTipo.toLowerCase() + ' ' + lead.interest;
+    ev(created, 'in', 'Ingresó desde ' + SOURCES[src].label + (lead.portal ? ' (' + lead.portal + ')' : '') + (camp ? ' · campaña «' + camp.name + '»' : '') + ' · ' + what);
+    ev(created + 2000, 'auto', 'Derivado a ' + ag.name + ' ' + ag.last + ' · perfil «' + ag.perfil + '»');
+    ev(created + 35000, 'auto', tipo === 'venta' ? 'WhatsApp de bienvenida: «Gracias por confiar en Inmoconecta, te llamamos para coordinar la tasación»' : 'WhatsApp de bienvenida con la ficha de ' + lead.interest);
 
     if (opts.unattended) { lead.score = scoreLead(lead); return lead; }
 
-    // Primera respuesta
     let mins = ag.speed * Math.exp(between(r, -0.9, 1.6));
     if (r() < 0.08) mins = between(r, 90, 1800);
     const fr = created + mins * MIN;
     if (fr > now) { lead.score = scoreLead(lead); return lead; }
     lead.firstResponse = fr;
-    ev(fr, 'call', 'Primera llamada · ' + (r() < 0.8 ? 'contestó' : 'no contestó, se dejó WhatsApp'), agent);
+    ev(fr, 'call', 'Primera llamada · ' + (r() < 0.8 ? 'contestó' : 'no contestó, se dejó WhatsApp'), ag.id);
 
-    const q = QUALITY[src] * (plazo === 'Solo averiguando' ? 0.55 : plazo === 'Este mes' ? 1.25 : 1);
-    const probs = [0.9 * contactFactor(mins), 0.66 * q, 0.6 * q, 0.5, 0.58, 0.86];
-    const durs = [[0.02, 0.2], [0.3, 2.5], [1, 5], [2, 8], [3, 10], [7, 20]];
-    let t = fr;
-    let i = 0;
-    while (i < 6) {
+    const st = STAGES[tipo];
+    let probs, durs;
+    if (tipo === 'compra') {
+      const q = QUALITY[src] * (lead.plazo === 'Solo averiguando' ? 0.55 : lead.plazo === 'Este mes' ? 1.25 : 1) * (lead.pago === 'No sabe' ? 0.8 : 1);
+      probs = [0.9 * contactFactor(mins), 0.66 * q, 0.6 * q, 0.5, 0.58, 0.86];
+      durs = [[0.02, 0.2], [0.3, 2.5], [1, 5], [2, 8], [3, 10], [7, 20]];
+    } else {
+      probs = [0.9 * contactFactor(mins), 0.66 * (lead.aNombre ? 1 : 0.6), 0.6, 0.92, 0.35];
+      durs = [[0.02, 0.2], [1, 6], [2, 8], [3, 7], [15, 50]];
+    }
+    let t = fr, i = 0;
+    while (i < st.length - 1) {
       const ok = r() < Math.min(0.97, probs[i]);
       const dt = between(r, durs[i][0], durs[i][1]) * DAY;
       if (!ok) {
         const lostAt = t + dt * between(r, 0.6, 1.6);
         if (lostAt <= now) {
-          lead.lossReason = pick(r, LOSS_BY_STAGE[i]);
-          lead.lostAt = lostAt;
-          lead.lostStage = STAGES[i].id;
+          lead.lossReason = pick(r, LOSS[tipo][i]);
+          lead.lostAt = lostAt; lead.lostStage = st[i].id; lead.stage = 'perdido';
           lead.history.push({ stage: 'perdido', at: lostAt });
-          lead.stage = 'perdido';
-          ev(lostAt, 'lost', 'Marcado como perdido en «' + STAGES[i].label + '»: ' + lead.lossReason, agent);
+          ev(lostAt, 'lost', 'Marcado como perdido en «' + st[i].label + '»: ' + lead.lossReason, ag.id);
         }
         break;
       }
       const nt = t + dt;
       if (nt > now) break;
-      t = nt;
-      i++;
-      lead.stage = STAGES[i].id;
-      lead.history.push({ stage: STAGES[i].id, at: t });
-      const money = fmtMoney(prop.cur, prop.price);
-      const texts = {
-        contactado: ['call', 'Conversación por WhatsApp · confirmó interés en ' + interest],
-        calificado: ['note', 'Calificado · presupuesto ' + fmtMoney(lead.cur, budget) + ' · ' + pago + ' · compra ' + plazo.toLowerCase()],
-        visita: ['visit', 'Visita agendada a ' + interest],
-        negociacion: ['offer', 'Oferta de ' + fmtMoney(prop.cur, prop.price * between(r, 0.9, 0.97)) + ' presentada al propietario (lista: ' + money + ')'],
-        separacion: ['doc', 'Separación firmada · ' + fmtMoney(prop.cur, prop.cur === 'S/' ? prop.price : 1000) + ' depositados'],
-        ganado: ['win', 'Cierre · minuta firmada en notaría']
-      };
-      const tx = texts[STAGES[i].id];
-      ev(t, tx[0], tx[1], agent);
-      if (STAGES[i].id === 'visita') {
-        lead.visitAt = t + between(r, 1, 3) * DAY;
-        if (lead.visitAt <= now) ev(lead.visitAt, 'visit', 'Visita realizada a ' + interest + ' con ' + ag.name, agent);
+      t = nt; i++;
+      lead.stage = st[i].id;
+      lead.history.push({ stage: st[i].id, at: t });
+      if (tipo === 'compra') {
+        const p = propById(lead.interest);
+        const tx = {
+          contactado: ['call', 'Conversación por WhatsApp · confirmó interés en ' + lead.interest],
+          calificado: ['note', 'Calificado · ' + fmtMoney(lead.cur, lead.budget) + ' · ' + lead.pago + (lead.credito ? ' (' + lead.credito + ')' : '') + ' · compra ' + lead.plazo.toLowerCase()],
+          visita: ['visit', 'Visita agendada a ' + lead.interest],
+          negociacion: ['offer', 'Oferta de ' + fmtMoney(p.cur, p.price * between(r, 0.9, 0.97)) + ' presentada al propietario'],
+          separacion: ['doc', 'Separación firmada'],
+          ganado: ['win', 'Compra cerrada · minuta firmada en notaría']
+        }[st[i].id];
+        ev(t, tx[0], tx[1], ag.id);
+        if (st[i].id === 'visita') {
+          lead.visitAt = t + between(r, 1, 3) * DAY;
+          if (lead.visitAt <= now) ev(lead.visitAt, 'visit', 'Visita realizada a ' + lead.interest, ag.id);
+        }
+      } else {
+        const tx = {
+          contactado: ['call', 'Llamada: confirma que quiere vender · ' + (lead.aNombre ? 'la propiedad está a su nombre' : 'no está a su nombre (' + lead.tituloDetalle.toLowerCase() + ')')],
+          tasacion: ['visit', 'Tasación realizada · rango sugerido ' + fmtMoney('US$', lead.precio * 0.9) + ' – ' + fmtMoney('US$', lead.precio * 0.98)],
+          exclusiva: ['doc', 'Contrato de exclusividad firmado por 6 meses'],
+          publicada: ['note', 'Publicada en web, portales y campaña'],
+          ganado: ['win', 'Propiedad vendida']
+        }[st[i].id];
+        ev(t, tx[0], tx[1], ag.id);
+        if (st[i].id === 'contactado') { lead.visitAt = t + between(r, 1, 4) * DAY; }
       }
     }
-    // Seguimiento intermedio
-    const last = lead.events[lead.events.length - 1].at;
-    if (lead.stage !== 'perdido' && lead.stage !== 'ganado' && r() < 0.55) {
-      const fu = last + between(r, 0.3, 4) * DAY;
-      ev(fu, pick(r, ['call', 'wa']), pick(r, ['Seguimiento: envió fotos adicionales', 'Seguimiento: consultó opciones de crédito', 'Seguimiento: pidió reprogramar', 'Seguimiento: envió ubicación y video']), agent);
+    // Próximo seguimiento para leads abiertos
+    if (lead.stage !== 'perdido' && lead.stage !== 'ganado') {
+      const last = lead.events.length ? lead.events[lead.events.length - 1].at : created;
+      const k = r();
+      let at;
+      if (k < 0.2) at = Math.max(last + 6 * HOUR, now - between(r, 3, 72) * HOUR);
+      else if (k < 0.6) { const d = new Date(now); d.setHours(Math.floor(between(r, 9, 19)), r() < 0.5 ? 0 : 30, 0, 0); at = d.getTime(); }
+      else at = now + between(r, 1, 5) * DAY;
+      lead.next = { at, text: NEXT[tipo][lead.stage] };
     }
     lead.score = scoreLead(lead);
     return lead;
   }
 
-  function scoreLead(l) {
-    let s = 30;
-    s += { 'Este mes': 30, '1 a 3 meses': 20, '3 a 6 meses': 8, 'Solo averiguando': -10 }[l.plazo] || 0;
-    s += { 'Contado': 18, 'Crédito hipotecario': 10, 'Crédito MiVivienda': 10, 'Techo Propio': 5 }[l.pago] || 0;
-    s += { nuevo: 0, contactado: 5, calificado: 12, visita: 18, negociacion: 24, separacion: 28, ganado: 30, perdido: -30 }[l.stage] || 0;
-    s += { ref: 10, portal: 6, web: 5, wa: 5, fb: 0, ig: 0, tt: -4 }[l.src] || 0;
-    return Math.max(3, Math.min(99, s));
-  }
-
-  function buildCaptacion(now) {
-    return [
-      { id: 'k1', owner: 'o12', address: 'Casa en Jr. Ica 340, El Tambo', type: 'Casa', expected: 'US$ 120,000', stage: 'solicitud', src: 'c6', created: now - 3 * HOUR, note: 'Llenó el formulario «Tasación gratuita» desde Instagram', agent: 'a4' },
-      { id: 'k2', owner: 'o11', address: 'Casa en Jr. Arequipa 215, Huancán', type: 'Casa', expected: 'US$ 72,000', stage: 'tasacion', src: 'c6', created: now - 8 * DAY, note: 'Tasación realizada: rango sugerido US$ 68k – 74k', agent: 'a2', prop: 'INC-115' },
-      { id: 'k3', owner: null, name: 'Frank Ticse Aliaga', phone: '+51 957 204 118', address: 'Departamento en Av. Ferrocarril 980', type: 'Departamento', expected: 'US$ 85,000', stage: 'agendada', src: 'c6', created: now - 2 * DAY, visit: now + 1 * DAY + 3 * HOUR, note: 'Tasación mañana 11:00', agent: 'a3' },
-      { id: 'k4', owner: null, name: 'Pamela Zárate Rojas', phone: '+51 948 663 015', address: 'Terreno 300 m² en Sicaya', type: 'Terreno', expected: 'US$ 35,000', stage: 'solicitud', src: 'wa', created: now - 26 * HOUR, note: 'Escribió al WhatsApp de la agencia', agent: 'a5' },
-      { id: 'k5', owner: 'o10', address: 'Departamento en Av. Huancavelica 3120', type: 'Departamento', expected: 'US$ 102,000', stage: 'publicada', src: 'ref', created: now - 75 * DAY, note: 'Publicado en web, Urbania y campaña Meta «Casas y dptos El Tambo»', agent: 'a2', prop: 'INC-114' },
-      { id: 'k6', owner: 'o9', address: 'Casa en Av. 9 de Diciembre, Chilca', type: 'Casa', expected: 'US$ 88,000', stage: 'publicada', src: 'c6', created: now - 26 * DAY, note: 'Reservada por un lead de TikTok', agent: 'a4', prop: 'INC-113' },
-      { id: 'k7', owner: null, name: 'Ronald Camargo Poma', phone: '+51 963 580 227', address: 'Local en Calle Real 1120', type: 'Local comercial', expected: 'S/ 4,500 / mes', stage: 'exclusiva', src: 'c6', created: now - 12 * DAY, note: 'Contrato de exclusividad firmado por 6 meses · sesión de fotos el jueves', agent: 'a3' },
-      { id: 'k8', owner: null, name: 'Brenda Inga Soto', phone: '+51 955 147 632', address: 'Casa en Urb. Los Jardines, San Carlos', type: 'Casa', expected: 'US$ 190,000', stage: 'agendada', src: 'c6', created: now - 4 * DAY, visit: now + 2 * DAY + 5 * HOUR, note: 'Quiere vender para mudarse a Lima', agent: 'a2' },
-      { id: 'k9', owner: 'o7', address: 'Casa de campo en Santa Rosa de Ocopa', type: 'Casa de campo', expected: 'US$ 110,000', stage: 'publicada', src: 'web', created: now - 45 * DAY, note: 'Publicado', agent: 'a4', prop: 'INC-110' }
-    ];
-  }
-
-  const CAPT_STAGES = [
-    { id: 'solicitud', label: 'Solicitud de venta' },
-    { id: 'agendada', label: 'Tasación agendada' },
-    { id: 'tasacion', label: 'Tasación realizada' },
-    { id: 'exclusiva', label: 'Exclusiva firmada' },
-    { id: 'publicada', label: 'Publicada' }
-  ];
-
   const AUTOMATIONS = [
-    { id: 'r1', on: true, name: 'Asignación por turno rotativo', when: 'Entra un lead de Meta, TikTok, web o portales', then: 'Se asigna al siguiente asesor en turno, según zona y tipo de inmueble', runs: 0, key: 'assign' },
-    { id: 'r2', on: true, name: 'WhatsApp de bienvenida en menos de 1 minuto', when: 'Se crea un lead con teléfono', then: 'Envía plantilla aprobada por Meta con la ficha, fotos y ubicación del inmueble', runs: 0, key: 'welcome' },
-    { id: 'r3', on: true, name: 'Escalamiento por falta de respuesta', when: 'Lead sin primera respuesta', then: '5 min: alerta al asesor · 15 min: se reasigna · 30 min: aviso a Alberto', runs: 0, key: 'sla' },
-    { id: 'r4', on: true, name: 'Recordatorio de visita', when: 'Visita agendada', then: 'WhatsApp al cliente 24 h y 2 h antes; si no confirma, tarea para el asesor', runs: 0, key: 'visit' },
-    { id: 'r5', on: true, name: 'Reactivación de leads fríos', when: '7 días sin actividad en un lead abierto', then: 'Secuencia de 3 mensajes con propiedades similares; si responde, vuelve al asesor', runs: 0, key: 'cold' },
-    { id: 'r6', on: true, name: 'Reporte semanal al propietario', when: 'Todos los lunes a las 9:00', then: 'Envía a cada propietario las vistas, leads, visitas y comentarios de su inmueble', runs: 0, key: 'owner' },
-    { id: 'r7', on: true, name: 'Alerta de inmueble estancado', when: 'Propiedad con más de 90 días en venta', then: 'Tarea para revisar precio, fotos y campaña; sugerencia con datos de la zona', runs: 0, key: 'stale' },
-    { id: 'r8', on: true, name: 'Conversiones de vuelta a Meta y TikTok', when: 'Un lead pasa a Calificado, Visita o Separación', then: 'Envía el evento por Conversions API (Meta) y Events API (TikTok) para que las campañas optimicen por calidad', runs: 0, key: 'capi' },
-    { id: 'r9', on: true, name: 'Detección de duplicados', when: 'Entra un lead con teléfono o correo existente', then: 'Une el historial y avisa al asesor que ya lo atendía', runs: 0, key: 'dup' },
-    { id: 'r10', on: false, name: 'Felicitación post-venta y pedido de referidos', when: '30 días y 1 año después del cierre', then: 'Mensaje de saludo y enlace para recomendar a un amigo', runs: 0, key: 'ref' }
+    { id: 'r1', on: true, name: 'Derivación por perfil de asesor', when: 'Entra un lead de Meta, TikTok, web, WhatsApp o portales', then: 'Compra o venta, forma de pago, tipo de inmueble y si está a su nombre deciden qué asesor lo atiende', key: 'assign' },
+    { id: 'r2', on: true, name: 'WhatsApp de bienvenida en menos de 1 minuto', when: 'Se crea un lead con teléfono', then: 'Compra: ficha del inmueble. Venta: mensaje para coordinar la tasación', key: 'welcome' },
+    { id: 'r3', on: true, name: 'Escalamiento por falta de respuesta', when: 'Lead sin primera respuesta', then: '5 min: alerta al asesor · 15 min: pasa a otro asesor con el mismo perfil · 30 min: aviso a Alberto', key: 'sla' },
+    { id: 'r4', on: true, name: 'Recordatorio de visitas y tasaciones', when: 'Cita agendada', then: 'WhatsApp al cliente 24 h y 2 h antes; si no confirma, tarea para el asesor', key: 'visit' },
+    { id: 'r5', on: true, name: 'Seguimiento vencido', when: 'Un seguimiento pasa su fecha sin registrarse', then: 'Aparece en «Vencidos» y se avisa al asesor; a las 48 h se avisa a Alberto', key: 'follow' },
+    { id: 'r6', on: true, name: 'Documentos cuando no está a su nombre', when: 'Propietario indica que el inmueble no está a su nombre', then: 'Envía la lista de documentos para sanear (sucesión, partida registral) y crea tarea de revisión legal', key: 'docs' },
+    { id: 'r7', on: true, name: 'Reporte semanal al propietario', when: 'Todos los lunes a las 9:00', then: 'Vistas, interesados, visitas y ofertas de su inmueble por WhatsApp y correo', key: 'owner' },
+    { id: 'r8', on: true, name: 'Conversiones de vuelta a Meta y TikTok', when: 'Un lead se califica, visita o separa', then: 'Se informa a las plataformas para que las campañas busquen compradores reales', key: 'capi' }
   ];
 
   const INTEGRATIONS = [
-    { id: 'meta', name: 'Meta Lead Ads', detail: 'Facebook e Instagram · formularios instantáneos', status: 'Conectado', how: 'Webhook oficial de Meta (leadgen). El lead llega al CRM en segundos, con campaña, conjunto de anuncios y anuncio.' },
-    { id: 'tiktok', name: 'TikTok Lead Generation', detail: 'Instant Forms y Spark Ads', status: 'Conectado', how: 'TikTok Lead Gen API con suscripción a nuevos leads por formulario.' },
-    { id: 'capi', name: 'Meta Conversions API y TikTok Events API', detail: 'Retorno de conversiones', status: 'Conectado', how: 'El CRM informa a las plataformas qué leads se calificaron, visitaron o separaron.' },
-    { id: 'wa', name: 'WhatsApp Business API', detail: 'Número de la agencia con varios asesores', status: 'Conectado', how: 'Bandeja compartida: cada conversación queda en la ficha del lead, aunque cambie el asesor.' },
-    { id: 'web', name: 'Sitio web de Inmoconecta', detail: 'Formularios y catálogo', status: 'Listo para conectar', how: 'La agencia que hace la web solo envía sus formularios a nuestro endpoint o pega un script. El catálogo de la web se puede alimentar desde el stock del CRM.' },
-    { id: 'portals', name: 'Portales inmobiliarios', detail: 'Urbania · Adondevivir', status: 'Conectado', how: 'Consultas de portales entran como leads; publicación de fichas desde el CRM.' },
-    { id: 'gcal', name: 'Google Calendar', detail: 'Agenda de visitas por asesor', status: 'Conectado', how: 'Cada visita agendada aparece en el calendario del asesor.' },
-    { id: 'mail', name: 'Correo (Gmail / Outlook)', detail: 'Envío y registro de correos', status: 'Conectado', how: 'Los correos con el cliente quedan en su historial.' }
+    { id: 'meta', name: 'Meta Lead Ads', detail: 'Facebook e Instagram', status: 'Conectado', how: 'Los formularios llegan en segundos con campaña y respuestas. El formulario pregunta si quiere comprar o vender.' },
+    { id: 'tiktok', name: 'TikTok Lead Generation', detail: 'Instant Forms', status: 'Conectado', how: 'Cada formulario de TikTok crea un lead y se deriva según su perfil.' },
+    { id: 'wa', name: 'WhatsApp Business API', detail: 'Número de la agencia', status: 'Conectado', how: 'Conversaciones compartidas: quedan en la ficha aunque cambie el asesor.' },
+    { id: 'web', name: 'Sitio web de Inmoconecta', detail: 'Formularios y catálogo', status: 'Listo para conectar', how: 'La agencia de la web envía sus formularios al CRM; el catálogo puede leerse desde el stock.' },
+    { id: 'portals', name: 'Portales inmobiliarios', detail: 'Urbania · Adondevivir', status: 'Conectado', how: 'Las consultas de portales entran como leads de compra.' },
+    { id: 'gcal', name: 'Google Calendar', detail: 'Visitas y tasaciones', status: 'Conectado', how: 'Cada cita aparece en el calendario del asesor.' }
   ];
 
   function build(now) {
-    const r = rng(20260929);
-    rrIndex = 0;
+    const r = rng(20261001);
+    const agents = AGENTS.map(a => Object.assign({}, a));
     const leads = [];
     let n = 1;
-    const N = 320;
-    for (let k = 0; k < N; k++) {
-      // más leads en días recientes
+    for (let k = 0; k < 340; k++) {
       const ageDays = Math.pow(r(), 1.25) * 62 + 0.02;
-      const created = now - ageDays * DAY - between(r, 0, 5) * HOUR;
-      leads.push(makeLead(r, now, { id: 'L-' + String(1000 + n++), created }));
+      leads.push(makeLead(r, now, agents, { id: 'L-' + (1000 + n++), created: now - ageDays * DAY - between(r, 0, 5) * HOUR }));
     }
-    // Leads recién llegados sin atender (bandeja de urgentes)
     const urgent = [
-      { mins: 2, src: 'tt', campaign: 'c4', agent: 'a3', name: 'Yesenia Ticse Poma' },
-      { mins: 9, src: 'fb', campaign: 'c1', agent: 'a5', name: 'Wilmer Rafael Soto' },
-      { mins: 38, src: 'ig', campaign: 'c2', agent: 'a5', name: 'Katherine Meza Huamán' },
-      { mins: 200, src: 'tt', campaign: 'c7', agent: 'a3', name: 'Edwin Paucar Lazo' },
-      { mins: 27 * 60 + 14, src: 'web', campaign: null, agent: 'a5', name: 'Diana Zárate Inga', interest: 'INC-102' }
+      { mins: 2, tipo: 'compra', src: 'tt', campaign: 'c4', name: 'Yesenia Ticse Poma', pago: 'Crédito' },
+      { mins: 7, tipo: 'venta', src: 'ig', name: 'Pamela Zárate Rojas', aNombre: false, propTipo: 'Casa', zona: 'El Tambo' },
+      { mins: 11, tipo: 'compra', src: 'fb', campaign: 'c1', name: 'Wilmer Rafael Soto', pago: 'Contado' },
+      { mins: 38, tipo: 'venta', src: 'wa', name: 'Frank Ticse Aliaga', aNombre: true, propTipo: 'Departamento', zona: 'Huancayo' },
+      { mins: 200, tipo: 'compra', src: 'tt', campaign: 'c7', name: 'Edwin Paucar Lazo', pago: 'No sabe' },
+      { mins: 27 * 60 + 14, tipo: 'compra', src: 'web', campaign: null, name: 'Diana Zárate Inga', interest: 'INC-102', pago: 'Crédito' }
     ];
-    urgent.forEach(u => {
-      leads.push(makeLead(r, now, { id: 'L-' + String(1000 + n++), created: now - u.mins * MIN, src: u.src, campaign: u.campaign, agent: u.agent, name: u.name, interest: u.interest, unattended: true }));
-    });
+    urgent.forEach(u => leads.push(makeLead(r, now, agents, Object.assign({ id: 'L-' + (1000 + n++), created: now - u.mins * MIN, unattended: true }, u))));
     leads.sort((a, b) => b.created - a.created);
 
-    // Visitas futuras para leads activos en etapa Visita
+    // Citas en los próximos días
     leads.forEach(l => {
-      if (l.stage === 'visita' && l.visitAt && l.visitAt < now) {
-        if (r() < 0.6) {
-          const day = Math.floor(between(r, 0, 7));
-          const d = new Date(now + day * DAY);
+      const cita = (l.tipo === 'compra' && l.stage === 'visita') || (l.tipo === 'venta' && l.stage === 'contactado');
+      if (!cita) { if (l.tipo === 'venta') l.visitAt = null; return; }
+      if (!l.visitAt || l.visitAt < now) {
+        if (r() < 0.65) {
+          const d = new Date(now + Math.floor(between(r, 0, 6)) * DAY);
           d.setHours(Math.floor(between(r, 9, 18)), r() < 0.5 ? 0 : 30, 0, 0);
           if (d.getTime() < now) d.setTime(d.getTime() + DAY);
           l.visitAt = d.getTime();
           l.events = l.events.filter(e => !/^Visita realizada/.test(e.text));
-        }
+        } else if (l.tipo === 'venta') l.visitAt = null;
       }
-      if (l.stage === 'visita' && l.visitAt > now) l.visitConfirmed = r() < 0.55;
+      if (l.visitAt > now) { const d = new Date(l.visitAt); d.setMinutes(d.getMinutes() < 30 ? 0 : 30, 0, 0); if (d.getHours() < 9) d.setHours(10); if (d.getHours() > 18) d.setHours(17); l.visitAt = Math.max(d.getTime(), now + 30 * MIN); l.visitConfirmed = r() < 0.55; }
     });
 
     const properties = PROPERTIES.map(p => Object.assign({}, p, {
@@ -375,49 +402,36 @@
       views: Math.round((p.listed + 10) * (p.campaigns.length ? 38 : 6) * (0.6 + r() * 0.8)),
       priceChanges: p.priceHist.map((v, i) => ({ from: v, to: i + 1 < p.priceHist.length ? p.priceHist[i + 1] : p.price, at: now - Math.round(p.listed * (0.35 + i * 0.3)) * DAY }))
     }));
-
-    const campaigns = CAMPAIGNS.map(c => Object.assign({}, c, {
-      impressions: Math.round(c.spend * (c.platform === 'tiktok' ? 95 : 62) * (0.85 + r() * 0.3)),
-      clicks: 0
-    }));
-    campaigns.forEach(c => { c.clicks = Math.round(c.impressions * (c.platform === 'tiktok' ? 0.012 : 0.016)); });
-
-    const agents = AGENTS.map(a => Object.assign({}, a));
-    const automations = AUTOMATIONS.map(a => Object.assign({}, a));
-    automations.forEach(a => {
-      a.runs = { assign: leads.length, welcome: leads.length - 4, sla: 104, visit: 181, cold: 396, owner: 88, stale: 9, capi: 402, dup: 31, ref: 0 }[a.key];
-    });
+    const campaigns = CAMPAIGNS.map(c => Object.assign({}, c, { impressions: Math.round(c.spend * (c.platform === 'tiktok' ? 95 : 62) * (0.85 + r() * 0.3)) }));
+    const automations = AUTOMATIONS.map(a => Object.assign({}, a, { runs: { assign: leads.length, welcome: leads.length - 6, sla: 104, visit: 181, follow: 233, docs: 31, owner: 88, capi: 402 }[a.key] }));
 
     return {
-      version: 3,
+      version: 4,
       builtAt: now,
       leads,
       properties,
       owners: OWNERS.map(o => Object.assign({}, o, { sinceAt: now - o.since * DAY, lastReport: now - Math.floor(r() * 6 + 1) * DAY })),
-      captacion: buildCaptacion(now),
       campaigns,
       agents,
       automations,
       integrations: INTEGRATIONS.map(i => Object.assign({}, i, { lastSync: now - Math.floor(r() * 4 + 1) * MIN })),
-      seq: n
+      seq: n,
+      log: []
     };
   }
 
-  // Lead nuevo simulado (para la demostración "en vivo")
   const liveRng = rng(Date.now() % 100000);
   function incoming(state, now) {
-    const src = pickW(liveRng, [['fb', 3], ['ig', 2], ['tt', 4]]);
-    const agentsOn = state.agents.filter(a => a.rr && a.onDuty);
-    const pool = agentsOn.length ? agentsOn : state.agents.filter(a => a.rr);
-    const agent = pool[(state.seq || 0) % pool.length];
-    const lead = makeLead(liveRng, now, { id: 'L-' + String(1000 + state.seq), created: now, src, agent: agent.id, unattended: true });
+    const tipo = liveRng() < 0.3 ? 'venta' : 'compra';
+    const src = tipo === 'venta' ? pickW(liveRng, [['ig', 3], ['fb', 2], ['wa', 2]]) : pickW(liveRng, [['fb', 3], ['ig', 2], ['tt', 4]]);
+    const lead = makeLead(liveRng, now, state.agents, { id: 'L-' + (1000 + state.seq), created: now, tipo, src, unattended: true, forceRec: true });
     state.seq++;
     return lead;
   }
 
   window.DEMO = {
     MIN, HOUR, DAY,
-    SOURCES, STAGES, CAPT_STAGES, LOSS_REASONS, PLAZO, PAGO,
-    build, incoming, scoreLead
+    SOURCES, STAGES, PAGO, CREDITO, NO_A_NOMBRE, PROP_TYPES, DISTRICTS, PLAZO, LOSS_REASONS, NEXT,
+    build, incoming, scoreLead, recommend, stageList, stageLabel
   };
 })();
